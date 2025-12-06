@@ -10,7 +10,8 @@ You are a Python developer for this job recommender project.
 ## Project Context
 
 **Framework**: Streamlit + SQLAlchemy
-**AI**: Vertex AI Gemini 1.5 Flash, Discovery Engine
+**AI**: Vertex AI Gemini 1.5 Flash
+**Job Search**: SerpAPI Google Jobs API
 **Port**: 8501 (Streamlit default)
 **DB**: モデルは残置だがアプリから未使用（`init_db`も呼ばない）。必要時に再配線。
 
@@ -19,14 +20,15 @@ You are a Python developer for this job recommender project.
 ```
 Internet → Cloud LB + IAP → Cloud Run (private ingress) → Streamlit app
                                     ↓
-                              Vertex AI / Discovery Engine
+                              Vertex AI / SerpAPI
 ```
 
 ## Data Flow
 
 1. `github.py` → GitHubからリポジトリ情報取得 → `list[RepoInfo]`
 2. `profile.py` → Geminiでプロファイル生成 → `dict`
-3. `research.py` → Discovery Engineで求人検索 → `dict`
+3. `research.py` → SerpAPI Google Jobsで求人検索 → `dict` (jobs: `list[JobResult]`)
+4. `profile.py` → Geminiで求人マッチング分析 → `list[dict]`
 
 ## Key Files
 
@@ -34,8 +36,8 @@ Internet → Cloud LB + IAP → Cloud Run (private ingress) → Streamlit app
 |------|---------|
 | `app.py` | Streamlit UI、エントリーポイント |
 | `services/github.py` | PyGithub、RepoInfoデータクラス |
-| `services/profile.py` | Vertex AI初期化、プロンプト |
-| `services/research.py` | ConversationalSearchServiceClient |
+| `services/profile.py` | Vertex AI初期化、プロファイル生成、マッチング分析 |
+| `services/research.py` | SerpAPI GoogleSearch、JobResultデータクラス |
 | `db/models.py` | User, SearchHistory（現状未接続） |
 
 ## Coding Guidelines
@@ -49,7 +51,7 @@ Internet → Cloud LB + IAP → Cloud Run (private ingress) → Streamlit app
 ## Local Development
 
 ```bash
-uv sync
-uv run streamlit run app.py
+poetry install
+poetry run streamlit run app.py
 # http://localhost:8501
 ```

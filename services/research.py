@@ -1,61 +1,97 @@
-"""Deep Research integration for job search."""
+"""Job search using SerpAPI Google Jobs API."""
 
 import os
+from dataclasses import dataclass
 
-from google.cloud import discoveryengine_v1 as discoveryengine
+from serpapi import GoogleSearch
 
 
-def search_jobs(profile: dict) -> dict:
-    """Search for jobs using Deep Research based on developer profile.
+@dataclass
+class JobResult:
+    """Job search result from SerpAPI."""
 
-    Note: This requires Discovery Engine with Deep Research enabled.
-    You need to:
-    1. Create a Discovery Engine app with web search enabled
-    2. Get allowlist access for Deep Research API
-    """
-    project_id = os.getenv("GCP_PROJECT_ID")
-    # app_id needs to be created in Discovery Engine console
-    app_id = os.getenv("DISCOVERY_ENGINE_APP_ID", "job-search-app")
+    title: str
+    company_name: str
+    location: str
+    description: str
+    job_link: str | None
+    detected_extensions: dict | None  # salary, schedule, etc.
 
-    # Build search query from profile
+
+def build_search_query(profile: dict) -> str:
+    """Build search query from developer profile."""
     keywords = profile.get("job_fit", {}).get("keywords", [])
     roles = profile.get("job_fit", {}).get("ideal_roles", [])
     tech_stack = profile.get("tech_stack", {})
 
-    languages = tech_stack.get("languages", [])
-    frameworks = tech_stack.get("frameworks", [])
+    languages = tech_stack.get("languages", [])[:2]
+    frameworks = tech_stack.get("frameworks", [])[:2]
 
-    search_terms = keywords + roles + languages[:3] + frameworks[:3]
-    query = f"求人 エンジニア {' '.join(search_terms)}"
+    # Combine terms for search
+    search_terms = roles[:2] + languages + frameworks + keywords[:2]
+    return " ".join(search_terms[:6])  # Limit to avoid overly specific queries
 
-    # Initialize client
-    client = discoveryengine.ConversationalSearchServiceClient()
 
-    # Build request for Deep Research
-    # Note: This is the streamAssist endpoint for Deep Research
-    parent = (
-        f"projects/{project_id}/locations/global/collections/default_collection"
-        f"/engines/{app_id}/assistants/default_assistant"
-    )
+def search_jobs(profile: dict, location: str = "Japan") -> dict:
+    """Search for jobs using SerpAPI Google Jobs API.
 
-    request = discoveryengine.ConverseConversationRequest(
-        name=parent,
-        query=discoveryengine.TextInput(input=query),
-    )
+    Args:
+        profile: Developer profile from generate_profile()
+        location: Job location (default: Japan)
+
+    Returns:
+        dict with query, jobs list, and status
+    """
+    api_key = os.getenv("SERPAPI_API_KEY")
+    if not api_key:
+        return {
+            "query": "",
+            "jobs": [],
+            "status": "error",
+            "error": "SERPAPI_API_KEY environment variable is required",
+        }
+
+    query = build_search_query(profile)
+
+    params = {
+        "engine": "google_jobs",
+        "q": query,
+        "location": location,
+        "hl": "ja",  # Japanese language
+        "api_key": api_key,
+    }
 
     try:
-        response = client.converse_conversation(request=request)
+        search = GoogleSearch(params)
+        results = search.get_dict()
+
+        jobs_results = results.get("jobs_results", [])
+
+        jobs = []
+        for job in jobs_results[:10]:  # Limit to 10 results
+            jobs.append(
+                JobResult(
+                    title=job.get("title", ""),
+                    company_name=job.get("company_name", ""),
+                    location=job.get("location", ""),
+                    description=job.get("description", ""),
+                    job_link=job.get("share_link")
+                    or job.get("related_links", [{}])[0].get("link"),
+                    detected_extensions=job.get("detected_extensions"),
+                )
+            )
+
         return {
             "query": query,
-            "results": response.reply.text if response.reply else "",
-            "status": "success"
+            "jobs": jobs,
+            "status": "success",
+            "total_results": len(jobs),
         }
+
     except Exception as e:
-        # Fallback for when Deep Research is not available
         return {
             "query": query,
-            "results": None,
+            "jobs": [],
             "status": "error",
             "error": str(e),
-            "message": "Deep Research APIが利用できません。Discovery Engineのセットアップを確認してください。"
         }

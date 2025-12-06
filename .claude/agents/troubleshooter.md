@@ -58,5 +58,5 @@ gcloud logging read "resource.type=http_load_balancer" --limit=50
 gcloud iap web get-iam-policy --resource-type=backend-services --service=<backend-name>
 
 # ローカルテスト
-uv run streamlit run app.py
+poetry run streamlit run app.py
 ```
