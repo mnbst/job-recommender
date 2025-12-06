@@ -9,8 +9,6 @@ dependencies = [
     "google-cloud-aiplatform>=1.38.0",
     "google-cloud-discoveryengine>=0.11.0",
     "PyGithub>=2.1.0",
-    "psycopg2-binary>=2.9.9",
-    "sqlalchemy>=2.0.0",
     "python-dotenv>=1.0.0",
 ]
 
