@@ -29,9 +29,10 @@ services/
   github.py      → GitHub API (PyGithub) - RepoInfo取得
   profile.py     → Vertex AI Gemini - プロファイル生成
   research.py    → Discovery Engine - Deep Research求人検索
-db/
-  models.py      → SQLAlchemy (User, SearchHistory)
-terraform/       → インフラ定義（未作成、gcp/tf-go-apiを参照）
+db/              → SQLAlchemyモデル（現在アプリから未使用）
+  models.py      → User, SearchHistory
+terraform/       → インフラ定義 (Cloud Run + LB + IAP)
+Dockerfile       → Python 3.11-slim + uv
 ```
 
 ## Agents（作業別）
@@ -55,7 +56,7 @@ uv run pytest
 uv run ruff check . && uv run ruff format .
 
 # デプロイ
-gcloud builds submit --tag asia-northeast1-docker.pkg.dev/${PROJECT_ID}/tf-app/job-recommender:latest
+gcloud builds submit --tag asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
 
 # Terraform
 cd terraform && terraform plan && terraform apply
@@ -66,5 +67,5 @@ cd terraform && terraform plan && terraform apply
 - `GITHUB_TOKEN` - GitHub PAT
 - `GCP_PROJECT_ID` - GCPプロジェクトID
 - `GCP_LOCATION` - Vertex AIリージョン (default: asia-northeast1)
-- `DATABASE_URL` - PostgreSQL接続文字列 (未設定時SQLite)
+- `DATABASE_URL` - DB接続文字列（現状アプリから未使用。未設定時SQLiteフォールバックだがCloud Runでは揮発的）
 - `DISCOVERY_ENGINE_APP_ID` - Deep Research用アプリID

@@ -12,6 +12,7 @@ You are a Python developer for this job recommender project.
 **Framework**: Streamlit + SQLAlchemy
 **AI**: Vertex AI Gemini 1.5 Flash, Discovery Engine
 **Port**: 8501 (Streamlit default)
+**DB**: モデルは残置だがアプリから未使用（`init_db`も呼ばない）。必要時に再配線。
 
 ## Architecture
 
@@ -35,7 +36,7 @@ Internet → Cloud LB + IAP → Cloud Run (private ingress) → Streamlit app
 | `services/github.py` | PyGithub、RepoInfoデータクラス |
 | `services/profile.py` | Vertex AI初期化、プロンプト |
 | `services/research.py` | ConversationalSearchServiceClient |
-| `db/models.py` | User, SearchHistory、セッション管理 |
+| `db/models.py` | User, SearchHistory（現状未接続） |
 
 ## Coding Guidelines
 

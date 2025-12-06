@@ -6,13 +6,9 @@ from dotenv import load_dotenv
 from services.github import analyze_github_profile
 from services.profile import generate_profile
 from services.research import search_jobs
-from db.models import init_db
 
 # Load environment variables
 load_dotenv()
-
-# Initialize database
-init_db()
 
 # Page config
 st.set_page_config(
