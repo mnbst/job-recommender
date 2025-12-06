@@ -9,11 +9,10 @@ You are a Python developer for this job recommender project.
 
 ## Project Context
 
-**Framework**: Streamlit + SQLAlchemy
+**Framework**: Streamlit
 **AI**: Vertex AI Gemini 1.5 Flash
 **Job Search**: SerpAPI Google Jobs API
 **Port**: 8501 (Streamlit default)
-**DB**: モデルは残置だがアプリから未使用（`init_db`も呼ばない）。必要時に再配線。
 
 ## Architecture
 
@@ -38,7 +37,6 @@ Internet → Cloud LB + IAP → Cloud Run (private ingress) → Streamlit app
 | `services/github.py` | PyGithub、RepoInfoデータクラス |
 | `services/profile.py` | Vertex AI初期化、プロファイル生成、マッチング分析 |
 | `services/research.py` | SerpAPI GoogleSearch、JobResultデータクラス |
-| `db/models.py` | User, SearchHistory（現状未接続） |
 
 ## Coding Guidelines
 

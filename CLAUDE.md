@@ -29,8 +29,6 @@ services/
   github.py      → GitHub API (PyGithub) - RepoInfo取得
   profile.py     → Vertex AI Gemini - プロファイル生成 + 求人マッチング分析
   research.py    → SerpAPI Google Jobs - 求人検索
-db/              → SQLAlchemyモデル（現在アプリから未使用）
-  models.py      → User, SearchHistory
 terraform/       → インフラ定義 (Cloud Run + LB + IAP)
 Dockerfile       → Python 3.11-slim + Poetry
 ```
@@ -73,4 +71,3 @@ cd terraform && terraform plan && terraform apply
 - `GCP_PROJECT_ID` - GCPプロジェクトID
 - `GCP_LOCATION` - Vertex AIリージョン (default: asia-northeast1)
 - `SERPAPI_API_KEY` - SerpAPI APIキー (https://serpapi.com)
-- `DATABASE_URL` - DB接続文字列（現状アプリから未使用）
