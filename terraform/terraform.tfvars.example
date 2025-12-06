@@ -1,0 +1,12 @@
+project_id        = "your-project-id"
+iap_support_email = "your-email@example.com"
+github_token      = "ghp_xxxxxxxxxxxx"
+
+authorized_members = [
+  "user:your-email@example.com",
+  # "group:your-group@googlegroups.com",
+]
+
+# Optional
+# domain_name           = "job-recommender.example.com"
+# discovery_engine_app_id = "job-search-app"
