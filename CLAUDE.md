@@ -4,11 +4,11 @@
 **重要**: 仕様変更・設計変更があった場合、関連ファイルを必ず更新：
 | 変更内容 | 更新先 |
 |---------|--------|
-| スタック・構造 | CLAUDE.md |
-| Python実装詳細 | .claude/agents/python-dev.md |
-| Terraform詳細 | .claude/agents/terraform-modifier.md |
-| デプロイ手順 | .claude/agents/deployer.md |
-| トラブル対応 | .claude/agents/troubleshooter.md |
+| スタック・構造 | [CLAUDE.md](./CLAUDE.md) |
+| Python実装詳細 | [.claude/agents/python-dev.md](./.claude/agents/python-dev.md) |
+| Terraform詳細 | [.claude/agents/terraform-modifier.md](./.claude/agents/terraform-modifier.md) |
+| デプロイ手順 | [.claude/agents/deployer.md](./.claude/agents/deployer.md) |
+| トラブル対応 | [.claude/agents/troubleshooter.md](./.claude/agents/troubleshooter.md) |
 
 セッション終了前に必ず反映すること。
 
