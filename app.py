@@ -1,0 +1,125 @@
+"""Job Recommender - Streamlit Application."""
+
+import streamlit as st
+from dotenv import load_dotenv
+
+from services.github import analyze_github_profile
+from services.profile import generate_profile
+from services.research import search_jobs
+from db.models import init_db
+
+# Load environment variables
+load_dotenv()
+
+# Initialize database
+init_db()
+
+# Page config
+st.set_page_config(
+    page_title="Job Recommender",
+    page_icon="💼",
+    layout="wide",
+)
+
+st.title("💼 Job Recommender")
+st.subheader("GitHubプロファイルから最適な求人をレコメンド")
+
+# Sidebar
+with st.sidebar:
+    st.header("設定")
+    github_username = st.text_input(
+        "GitHubユーザー名",
+        placeholder="例: octocat",
+    )
+    repo_limit = st.slider("分析するリポジトリ数", 1, 20, 10)
+
+    analyze_button = st.button("プロファイル分析", type="primary")
+
+# Main content
+if analyze_button and github_username:
+    with st.spinner("GitHubプロファイルを分析中..."):
+        try:
+            # Step 1: Fetch GitHub data
+            st.info("📦 リポジトリ情報を取得中...")
+            repos = analyze_github_profile(github_username, repo_limit)
+
+            if not repos:
+                st.error("リポジトリが見つかりませんでした")
+                st.stop()
+
+            st.success(f"✅ {len(repos)}個のリポジトリを取得しました")
+
+            # Step 2: Generate profile
+            st.info("🤖 プロファイルを生成中...")
+            profile = generate_profile(repos)
+
+            # Display profile
+            st.header("📊 開発者プロファイル")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.subheader("技術スタック")
+                tech = profile.get("tech_stack", {})
+                st.write("**言語:**", ", ".join(tech.get("languages", [])))
+                st.write("**フレームワーク:**", ", ".join(tech.get("frameworks", [])))
+                st.write("**インフラ:**", ", ".join(tech.get("infrastructure", [])))
+
+                st.subheader("得意領域")
+                for area in profile.get("expertise_areas", []):
+                    st.write(f"• {area}")
+
+            with col2:
+                st.subheader("スキル評価")
+                assessment = profile.get("skill_assessment", {})
+                st.write("**コード品質:**", assessment.get("code_quality", "-"))
+                st.write("**設計力:**", assessment.get("design_ability", "-"))
+                st.write("**完遂力:**", assessment.get("completion_rate", "-"))
+
+                st.subheader("興味・関心")
+                for interest in profile.get("interests", []):
+                    st.write(f"• {interest}")
+
+            st.subheader("💡 総合評価")
+            st.info(profile.get("summary", ""))
+
+            # Step 3: Search jobs
+            st.header("🔍 求人レコメンド")
+
+            with st.spinner("求人を検索中..."):
+                job_results = search_jobs(profile)
+
+                if job_results.get("status") == "success":
+                    st.write(job_results.get("results", ""))
+                else:
+                    st.warning(job_results.get("message", "求人検索に失敗しました"))
+                    st.write("**検索クエリ:**", job_results.get("query", ""))
+
+                    # Show job fit info as alternative
+                    st.subheader("推奨される職種・企業")
+                    job_fit = profile.get("job_fit", {})
+                    st.write("**理想的な職種:**", ", ".join(job_fit.get("ideal_roles", [])))
+                    st.write("**マッチする企業タイプ:**", ", ".join(job_fit.get("company_types", [])))
+                    st.write("**検索キーワード:**", ", ".join(job_fit.get("keywords", [])))
+
+        except Exception as e:
+            st.error(f"エラーが発生しました: {str(e)}")
+
+else:
+    # Welcome message
+    st.markdown("""
+    ### 使い方
+
+    1. サイドバーにGitHubユーザー名を入力
+    2. 「プロファイル分析」ボタンをクリック
+    3. AIがリポジトリを分析し、プロファイルを生成
+    4. マッチする求人をレコメンド
+
+    ---
+
+    **機能:**
+    - 📦 GitHubリポジトリの自動解析
+    - 🤖 採用担当者目線でのプロファイル生成
+    - 🔍 Deep Researchによる求人検索
+    - 📈 スキルギャップ分析（Coming Soon）
+    """)
