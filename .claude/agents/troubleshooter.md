@@ -32,18 +32,29 @@ gcloud beta services identity create --service=iap.googleapis.com --project=PROJ
 - **確認**: container_portが8501か、Dockerfileの起動コマンド
 - **対処**: `--server.port=8501 --server.address=0.0.0.0`を指定
 
-### 5. Vertex AI / Discovery Engine エラー
+### 5. Vertex AI エラー
 - **原因**: 認証エラー、API未有効化
 - **確認**:
 ```bash
-gcloud services list --enabled | grep -E "aiplatform|discoveryengine"
+gcloud services list --enabled | grep aiplatform
 ```
 - **対処**: APIを有効化、サービスアカウント権限を確認
 
 ### 6. GitHub API レート制限
 - **原因**: GITHUB_TOKEN未設定 or 無効
-- **確認**: `.env`の`GITHUB_TOKEN`を確認
-- **対処**: 新しいPATを生成して設定
+- **確認**: Secret Managerの`github_token`を確認
+```bash
+gcloud secrets versions access latest --secret=github_token
+```
+- **対処**: 新しいPATを生成してSecret Managerを更新
+
+### 7. SerpAPI エラー
+- **原因**: SERPAPI_API_KEY未設定 or クォータ超過
+- **確認**: Secret Managerの`serp_api_key`を確認
+```bash
+gcloud secrets versions access latest --secret=serp_api_key
+```
+- **対処**: https://serpapi.com でAPIキー確認、クォータ確認
 
 ## Useful Commands
 

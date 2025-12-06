@@ -66,8 +66,14 @@ cd terraform && terraform plan && terraform apply
 ```
 
 ## Environment Variables
-`.env`に設定:
-- `GITHUB_TOKEN` - GitHub PAT
-- `GCP_PROJECT_ID` - GCPプロジェクトID
-- `GCP_LOCATION` - Vertex AIリージョン (default: asia-northeast1)
-- `SERPAPI_API_KEY` - SerpAPI APIキー (https://serpapi.com)
+Secret Managerで管理（Terraformは参照のみ）:
+| シークレット名 | 用途 |
+|---------------|------|
+| `github_token` | GitHub PAT |
+| `serp_api_key` | SerpAPI APIキー |
+
+Cloud Runに自動注入される環境変数:
+- `GITHUB_TOKEN` - Secret Managerから
+- `SERPAPI_API_KEY` - Secret Managerから
+- `GCP_PROJECT_ID` - Terraform変数から
+- `GCP_LOCATION` - Terraform変数から
