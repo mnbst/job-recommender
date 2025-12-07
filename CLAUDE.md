@@ -12,12 +12,6 @@
 
 セッション終了前に必ず反映すること。
 
-## Update Diary Rule
-**git commit実行後は必ず**:
-1. 今日のgitコミット差分を取得
-2. `updates/YYYY-MM-DD.md` を作成または上書き
-3. 「学び」はユーザーに確認してから記載
-
 ## Writing Style
 CLAUDE.md・agents/*.mdを更新する際は以下を守る：
 - **簡潔に**: 箇条書き・表・コードブロック優先。散文は避ける
