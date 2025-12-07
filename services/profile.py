@@ -121,7 +121,7 @@ def analyze_job_matches(profile: dict, jobs: list) -> list[dict]:
             }
         )
 
-    prompt = f"""あなたは技術採用のマッチングエキスパートです。
+    prompt = f"""あなたは技術者採用のマッチングエキスパートです。
 以下の開発者プロファイルと求人リストを比較し、各求人のマッチ度を分析してください。
 
 ## 開発者プロファイル
