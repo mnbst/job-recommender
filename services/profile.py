@@ -1,7 +1,7 @@
 """Profile generation using LLM (Vertex AI)."""
 
-import os
 import json
+import os
 
 import vertexai
 from vertexai.generative_models import GenerativeModel

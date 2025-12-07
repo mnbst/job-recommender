@@ -3,7 +3,7 @@
 import streamlit as st
 
 from services.github import analyze_github_profile
-from services.profile import generate_profile, analyze_job_matches
+from services.profile import analyze_job_matches, generate_profile
 from services.research import search_jobs
 
 # Page config
