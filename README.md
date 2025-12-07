@@ -79,21 +79,16 @@ echo -n "xxxxx" | gcloud secrets versions add serp_api_key --data-file=-
 
 ### ローカル実行
 
-ローカル開発時は環境変数を直接設定:
-
-```bash
-export GITHUB_TOKEN=ghp_xxxxx
-export GCP_PROJECT_ID=your-project-id
-export GCP_LOCATION=asia-northeast1
-export SERPAPI_API_KEY=xxxxx
-```
-
 ```bash
 # 依存関係インストール
 poetry install
 
-# 起動
-poetry run streamlit run app.py
+# GCP 認証（初回のみ）
+gcloud auth application-default login
+gcloud config set project YOUR_PROJECT_ID
+
+# 起動（Secret Manager から認証情報を自動取得）
+./scripts/run-local.sh
 # http://localhost:8501
 ```
 
@@ -119,14 +114,24 @@ terraform apply
 │   ├── github.py          # GitHub API連携
 │   ├── profile.py         # プロファイル生成 & マッチング分析
 │   └── research.py        # SerpAPI 求人検索
+├── scripts/
+│   └── run-local.sh       # ローカル起動スクリプト
 ├── terraform/             # インフラ定義
 │   ├── main.tf            # Cloud Run, Secret Manager, IAM
 │   ├── load_balancer.tf   # LB, IAP, SSL証明書
 │   └── variables.tf       # 変数定義
+├── updates/               # 開発日誌
 ├── Dockerfile
 ├── pyproject.toml
 └── README.md
 ```
+
+## 開発日誌
+
+日々の作業内容と学びを記録しています。
+
+- [2025-12-07](./updates/2025-12-07.md)
+- [2025-12-06](./updates/2025-12-06.md)
 
 ## ライセンス
 
