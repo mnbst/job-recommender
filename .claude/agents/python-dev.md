@@ -1,7 +1,7 @@
 ---
 name: python-dev
 description: Python実装・修正時に使用。エンドポイント追加、サービス修正、テスト作成など。例：「新しいサービス追加」「プロファイル生成を修正」
-model: sonnet
+model: opus
 color: blue
 ---
 
