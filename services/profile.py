@@ -22,7 +22,7 @@ def generate_profile(repos: list[RepoInfo]) -> dict:
     Analyzes repositories from a recruiter's perspective.
     """
     init_vertex_ai()
-    model = GenerativeModel("gemini-1.5-flash")
+    model = GenerativeModel("gemini-2.5-flash")
 
     # Prepare repository summaries
     repo_summaries = []
@@ -105,7 +105,7 @@ def analyze_job_matches(profile: dict, jobs: list) -> list[dict]:
         return []
 
     init_vertex_ai()
-    model = GenerativeModel("gemini-1.5-flash")
+    model = GenerativeModel("gemini-2.5-flash")
 
     # Prepare job summaries
     job_summaries = []
