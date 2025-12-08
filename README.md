@@ -28,7 +28,7 @@ GitHubユーザー名を入力するだけで、リポジトリから技術ス�
 | カテゴリ | 技術 |
 |---------|------|
 | Frontend | Streamlit |
-| AI/LLM | Vertex AI (Gemini 1.5 Flash) |
+| AI/LLM | Vertex AI (Gemini 2.5 Flash) |
 | 求人検索 | SerpAPI (Google Jobs API) |
 | インフラ | GCP (Cloud Run + Load Balancer + IAP) |
 | IaC | Terraform |
@@ -37,7 +37,7 @@ GitHubユーザー名を入力するだけで、リポジトリから技術ス�
 ## 工夫点
 
 ### 1. コスト最適化
-- **Gemini 1.5 Flash** を採用（GPT-4oの約1/10のコスト）
+- **Gemini 2.5 Flash** を採用（GPT-4oの約1/10のコスト）
 - 1ユーザーあたり約0.5円未満で分析可能
 - SerpAPI無料枠（月100検索）で小規模運用可能
 
@@ -87,8 +87,11 @@ poetry install
 gcloud auth application-default login
 gcloud config set project YOUR_PROJECT_ID
 
-# 起動（Secret Manager から認証情報を自動取得）
-./scripts/run-local.sh
+# 環境変数読み込み
+source ./scripts/load-env.sh
+
+# 起動
+poetry run streamlit run app.py
 # http://localhost:8501
 ```
 
@@ -115,7 +118,7 @@ terraform apply
 │   ├── profile.py         # プロファイル生成 & マッチング分析
 │   └── research.py        # SerpAPI 求人検索
 ├── scripts/
-│   └── run-local.sh       # ローカル起動スクリプト
+│   └── load-env.sh        # 環境変数読み込みスクリプト
 ├── terraform/             # インフラ定義
 │   ├── main.tf            # Cloud Run, Secret Manager, IAM
 │   ├── load_balancer.tf   # LB, IAP, SSL証明書
@@ -130,8 +133,14 @@ terraform apply
 
 日々の作業内容と学びを記録しています。
 
+<details>
+<summary>日誌一覧</summary>
+
+- [2025-12-09](./updates/2025-12-09.md)
 - [2025-12-07](./updates/2025-12-07.md)
 - [2025-12-06](./updates/2025-12-06.md)
+
+</details>
 
 ## ライセンス
 
