@@ -30,7 +30,7 @@ services/
   profile.py     → Vertex AI Gemini - プロファイル生成 + 求人マッチング分析
   research.py    → SerpAPI Google Jobs - 求人検索
 terraform/       → インフラ定義 (Cloud Run + LB + IAP)
-Dockerfile       → Python 3.11-slim + Poetry
+Dockerfile       → Python 3.11-slim + uv
 ```
 
 ## Flow
@@ -49,14 +49,14 @@ GitHub API → Vertex AI (プロファイル生成) → SerpAPI (求人検索) �
 ## Quick Commands
 ```bash
 # 依存関係インストール（本番用）
-poetry install --without dev
+uv sync --no-dev
 
 # ローカル実行
-poetry run streamlit run app.py
+uv run streamlit run app.py
 
 # テスト・Lint
-poetry run pytest
-poetry run ruff check . && poetry run ruff format .
+uv run pytest
+uv run ruff check . && uv run ruff format .
 
 # デプロイ
 gcloud builds submit --tag asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
