@@ -2,19 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install Poetry
-RUN pip install --no-cache-dir poetry
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy dependency files
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml uv.lock ./
 
-# Install dependencies without creating a venv and omit dev tools
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-root --without dev
+# Install dependencies
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application code
 COPY . .
 
 EXPOSE 8501
 
-CMD ["poetry", "run", "streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["uv", "run", "streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

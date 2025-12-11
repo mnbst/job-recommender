@@ -3,6 +3,8 @@
 # Secret Manager から認証情報を取得して .env.local に書き出す
 
 set -e
+gcloud auth login
+gcloud auth application-default login 
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
