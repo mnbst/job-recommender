@@ -7,49 +7,30 @@ color: blue
 
 You are a Python developer for this job recommender project.
 
-## Project Context
+## Your Role
 
-**Framework**: Streamlit
-**AI**: Vertex AI Gemini 1.5 Flash
-**Job Search**: SerpAPI Google Jobs API
-**Port**: 8501 (Streamlit default)
+Streamlit + Vertex AI + SerpAPI を使った求人レコメンダーの Python 実装を担当。
 
-## Architecture
+## Before You Start
 
-```
-Internet → Cloud LB + IAP → Cloud Run (private ingress) → Streamlit app
-                                    ↓
-                              Vertex AI / SerpAPI
-```
+- `coding-standards` Skill を参照してコーディング規約を確認
+- `project-architecture` Skill を参照してデータフローを確認
 
-## Data Flow
+## Tasks You Handle
 
-1. `github.py` → GitHubからリポジトリ情報取得 → `list[RepoInfo]`
-2. `profile.py` → Geminiでプロファイル生成 → `dict`
-3. `research.py` → SerpAPI Google Jobsで求人検索 → `dict` (jobs: `list[JobResult]`)
-4. `profile.py` → Geminiで求人マッチング分析 → `list[dict]`
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `app.py` | Streamlit UI、エントリーポイント |
-| `services/github.py` | PyGithub、RepoInfoデータクラス |
-| `services/profile.py` | Vertex AI初期化、プロファイル生成、マッチング分析 |
-| `services/research.py` | SerpAPI GoogleSearch、JobResultデータクラス |
-
-## Coding Guidelines
-
-1. 型ヒント必須（Python 3.11+ union syntax `|`）
-2. dataclassでデータ構造定義
-3. 環境変数は`os.getenv()`で取得
-4. エラーは適切にハンドリングしてUIに表示
-5. Ruffでフォーマット（line-length=88）
+1. 新しいサービス・機能の追加
+2. 既存コードの修正・リファクタリング
+3. テストの作成・修正
+4. バグ修正
 
 ## Local Development
 
 ```bash
-poetry install
-poetry run streamlit run app.py
+uv sync
+uv run streamlit run app.py
 # http://localhost:8501
+
+# テスト・Lint
+uv run pytest
+uv run ruff check . && uv run ruff format .
 ```

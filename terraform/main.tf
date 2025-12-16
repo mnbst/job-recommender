@@ -15,8 +15,8 @@ data "google_secret_manager_secret" "github_token" {
   secret_id = "github_token"
 }
 
-data "google_secret_manager_secret" "serpapi" {
-  secret_id = "serp_api_key"
+data "google_secret_manager_secret" "perplexity" {
+  secret_id = "perplexity_api_key"
 }
 
 # ============================================
@@ -34,9 +34,9 @@ resource "google_secret_manager_secret_iam_member" "github_token_access" {
   member    = "serviceAccount:${google_service_account.app.email}"
 }
 
-# Secret Managerへのアクセス権限 (SerpAPI)
-resource "google_secret_manager_secret_iam_member" "serpapi_access" {
-  secret_id = data.google_secret_manager_secret.serpapi.secret_id
+# Secret Managerへのアクセス権限 (Perplexity)
+resource "google_secret_manager_secret_iam_member" "perplexity_access" {
+  secret_id = data.google_secret_manager_secret.perplexity.secret_id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.app.email}"
 }
@@ -96,10 +96,10 @@ resource "google_cloud_run_v2_service" "app" {
       }
 
       env {
-        name = "SERPAPI_API_KEY"
+        name = "PERPLEXITY_API_KEY"
         value_source {
           secret_key_ref {
-            secret  = data.google_secret_manager_secret.serpapi.secret_id
+            secret  = data.google_secret_manager_secret.perplexity.secret_id
             version = "latest"
           }
         }

@@ -1,13 +1,13 @@
 [project]
 name = "job-recommender"
 version = "0.1.0"
-description = "GitHub profile-based job recommendation system using SerpAPI"
+description = "GitHub profile-based job recommendation system using Perplexity AI"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "streamlit>=1.28.0",
     "google-cloud-aiplatform>=1.38.0",
-    "google-search-results>=2.4.0",
+    "perplexityai>=0.1.0",
     "PyGithub>=2.1.0",
 ]
 
@@ -21,6 +21,3 @@ dev = [
 line-length = 88
 target-version = "py311"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"

@@ -7,6 +7,15 @@ color: green
 
 You are a deployment engineer for this job recommender project.
 
+## Your Role
+
+Docker ビルド → Artifact Registry → Terraform apply のデプロイフローを担当。
+
+## Before You Start
+
+- `project-architecture` Skill を参照してインフラ構成を確認
+- `troubleshooting` Skill を参照してよくある問題を把握
+
 ## Deployment Flow
 
 ```
@@ -19,7 +28,7 @@ You are a deployment engineer for this job recommender project.
 export PROJECT_ID=your-project-id
 export REGION=asia-northeast1
 
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/tf-app/job-recommender:latest
+gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
 ```
 
 ## Step 2: Terraform Apply
@@ -45,27 +54,13 @@ terraform output load_balancer_url
 - **イメージタグ一致**: gcloud submitのタグとmain.tfを合わせる
 - **SSL証明書**: 初回は最大15分待機
 - **IAP認証**: authorized_membersに含まれるユーザーのみアクセス可
-- **ポート**: Streamlitは8501（Dockerfile/Cloud Run設定で確認）
-
-## Dockerfile (作成時の参考)
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY pyproject.toml poetry.lock ./
-RUN pip install poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-root --without dev
-COPY . .
-EXPOSE 8501
-CMD ["poetry", "run", "streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
-```
+- **ポート**: Streamlitは8501
 
 ## Rollback
 
 ```bash
 # 前のイメージタグを指定してデプロイ
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/tf-app/job-recommender:v1.0.0
+gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:v1.0.0
 
 # main.tfのイメージタグを変更してapply
 ```
