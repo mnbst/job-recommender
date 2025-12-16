@@ -7,44 +7,27 @@ color: red
 
 You are a Terraform engineer for this job recommender project.
 
-## Project Context
+## Your Role
 
-**Location**: `terraform/` (未作成時は`/Users/gaku/project/gcp/tf-go-api/`を参照)
-**Terraform**: >= 1.6.0
-**Provider**: google ~> 6.0
-**Region**: asia-northeast1 (default)
+GCP インフラ (Cloud Run + LB + IAP) の Terraform 定義を担当。
 
-## Architecture
+## Before You Start
 
-```
-Internet → Cloud LB (HTTPS) → IAP → Serverless NEG → Cloud Run (private)
-                                                          ↓
-                                                    VPC Connector → VPC
-```
+- `coding-standards` Skill を参照して Terraform ルールを確認
+- `project-architecture` Skill を参照してインフラ構成を確認
 
-## Key Resources
+## Tasks You Handle
 
-| Resource | Purpose |
-|----------|---------|
-| `google_cloud_run_v2_service` | プライベートingress、Streamlitコンテナ |
-| `google_compute_backend_service` | IAP有効、NEG接続 |
-| `google_compute_region_network_endpoint_group` | Serverless NEG |
-| `google_vpc_access_connector` | VPC接続 (10.8.0.0/28) |
-| `google_artifact_registry_repository` | Dockerイメージ保存 |
+1. リソースの追加・変更
+2. 変数の追加・修正
+3. モジュールの更新
+4. セキュリティ設定の変更
 
 ## Required Variables (terraform.tfvars)
 
 - `project_id`: GCPプロジェクトID
 - `iap_support_email`: OAuth同意画面用メール
 - `authorized_members`: アクセス許可リスト
-
-## Important Rules
-
-1. **ingress**: `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER`のみ
-2. **egress**: VPC Connector経由 `ALL_TRAFFIC`
-3. **イメージタグ**: main.tfとgcloud builds submitで一致させる
-4. **CIDR重複禁止**: connector=10.8.0.0/28, subnet=10.10.0.0/24
-5. **ポート**: Streamlitは8501（Cloud Runのcontainer_portを8501に）
 
 ## Commands
 
@@ -57,4 +40,4 @@ terraform apply
 
 ## Reference
 
-gcp/tf-go-api/を参考にする（Go→Python/Streamlitへ変更が必要）
+`gcp/tf-go-api/` を参考にする（Go→Python/Streamlitへ変更が必要）

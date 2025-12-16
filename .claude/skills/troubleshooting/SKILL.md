@@ -1,11 +1,10 @@
 ---
-name: troubleshooter
-description: 障害対応・デバッグ時に使用。エラー調査、ログ確認、接続問題の解決など。例：「アクセスできない」「エラーが出る」「IAP認証失敗」
-model: sonnet
-color: yellow
+name: troubleshooting
+description: 障害対応・デバッグ時の解決策。エラー、アクセス不可、IAP認証失敗、API制限などの問題発生時に参照。
+allowed-tools: Read, Grep, Glob, Bash
 ---
 
-You are a troubleshooting engineer for this job recommender project.
+# Troubleshooting Guide
 
 ## Common Issues
 
@@ -48,13 +47,14 @@ gcloud secrets versions access latest --secret=github_token
 ```
 - **対処**: 新しいPATを生成してSecret Managerを更新
 
-### 7. SerpAPI エラー
-- **原因**: SERPAPI_API_KEY未設定 or クォータ超過
-- **確認**: Secret Managerの`serp_api_key`を確認
+### 7. Perplexity API エラー
+- **原因**: PERPLEXITY_API_KEY未設定 or クォータ超過
+- **確認**: Secret Managerの`perplexity_api_key`を確認
 ```bash
-gcloud secrets versions access latest --secret=serp_api_key
+gcloud secrets versions access latest --secret=perplexity_api_key
 ```
-- **対処**: https://serpapi.com でAPIキー確認、クォータ確認
+- **対処**: https://www.perplexity.ai でAPIキー確認、クォータ確認
+- **注意**: 初回JSON Schemaリクエストは10-30秒かかる可能性あり
 
 ## Useful Commands
 
@@ -69,5 +69,5 @@ gcloud logging read "resource.type=http_load_balancer" --limit=50
 gcloud iap web get-iam-policy --resource-type=backend-services --service=<backend-name>
 
 # ローカルテスト
-poetry run streamlit run app.py
+uv run streamlit run app.py
 ```

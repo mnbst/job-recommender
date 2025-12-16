@@ -541,15 +541,6 @@ wheels = [
 ]
 
 [[package]]
-name = "google-search-results"
-version = "2.4.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/77/30/b3a6f6a2e00f8153549c2fa345c58ae1ce8e5f3153c2fe0484d444c3abcb/google_search_results-2.4.2.tar.gz", hash = "sha256:603a30ecae2af8e600b22635757a6df275dad4b934f975e67878ccd640b78245", size = 18818, upload-time = "2023-03-10T11:13:09.953Z" }
-
-[[package]]
 name = "googleapis-common-protos"
 version = "1.72.0"
 source = { registry = "https://pypi.org/simple" }
@@ -715,10 +706,10 @@ wheels = [
 [[package]]
 name = "job-recommender"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "google-cloud-aiplatform" },
-    { name = "google-search-results" },
+    { name = "perplexityai" },
     { name = "pygithub" },
     { name = "streamlit" },
 ]
@@ -732,7 +723,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-cloud-aiplatform", specifier = ">=1.38.0" },
-    { name = "google-search-results", specifier = ">=2.4.0" },
+    { name = "perplexityai", specifier = ">=0.1.0" },
     { name = "pygithub", specifier = ">=2.1.0" },
     { name = "streamlit", specifier = ">=1.28.0" },
 ]
@@ -995,6 +986,23 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/1e/1bac1a839d12e6a82ec6cb40cda2edde64a2013a66963293696bbf31fbbb/pandas-2.3.3-cp314-cp314t-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2e3ebdb170b5ef78f19bfb71b0dc5dc58775032361fa188e814959b74d726dd5", size = 12121582, upload-time = "2025-09-29T23:30:43.391Z" },
     { url = "https://files.pythonhosted.org/packages/44/91/483de934193e12a3b1d6ae7c8645d083ff88dec75f46e827562f1e4b4da6/pandas-2.3.3-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:d051c0e065b94b7a3cea50eb1ec32e912cd96dba41647eb24104b6c6c14c5788", size = 12699963, upload-time = "2025-09-29T23:31:10.009Z" },
     { url = "https://files.pythonhosted.org/packages/70/44/5191d2e4026f86a2a109053e194d3ba7a31a2d10a9c2348368c63ed4e85a/pandas-2.3.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:3869faf4bd07b3b66a9f462417d0ca3a9df29a9f6abd5d0d0dbab15dac7abe87", size = 13202175, upload-time = "2025-09-29T23:31:59.173Z" },
+]
+
+[[package]]
+name = "perplexityai"
+version = "0.22.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/21/08822314b0da96ab8c77d321042f07b1d57a56ebf1448050647eba50336f/perplexityai-0.22.0.tar.gz", hash = "sha256:98ca91ee92411171e5a771f36c3fa82b5ee4595b777fe7f271fbe9b1d37b3055", size = 112471, upload-time = "2025-12-05T23:40:05.868Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/92/3e4a1e1e205504c429d6ac8c9494196a2f4c4d9f2a67c3ab520cdd86e8d9/perplexityai-0.22.0-py3-none-any.whl", hash = "sha256:bb4c3354d4f7f7c8381db831b1aa15c3b40a8482b5bc345378238b110f82bc76", size = 96534, upload-time = "2025-12-05T23:40:04.442Z" },
 ]
 
 [[package]]
