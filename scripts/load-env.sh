@@ -32,15 +32,15 @@ GITHUB_TOKEN=$(gcloud secrets versions access latest --secret="github_token" --p
     exit 1
 }
 
-SERPAPI_API_KEY=$(gcloud secrets versions access latest --secret="serp_api_key" --project="$PROJECT_ID" 2>/dev/null) || {
-    echo "Error: serp_api_key シークレットの取得に失敗しました"
+PERPLEXITY_API_KEY=$(gcloud secrets versions access latest --secret="perplexity_api_key" --project="$PROJECT_ID") || {
+    echo "Error: perplexity_api_key シークレットの取得に失敗しました"
     exit 1
 }
 
-# .env.local に書き出し
+# .env.local に書き出し（VS Code envFile形式）
 cat > "$PROJECT_ROOT/.env.local" << EOF
 GITHUB_TOKEN=${GITHUB_TOKEN}
-SERPAPI_API_KEY=${SERPAPI_API_KEY}
+PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
 GCP_PROJECT_ID=${PROJECT_ID}
 GCP_LOCATION=${LOCATION}
 EOF
