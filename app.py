@@ -1,5 +1,12 @@
 """Job Recommender - Streamlit Application."""
 
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# .env.local から環境変数を読み込み
+load_dotenv(Path(__file__).parent / ".env.local")
+
 import streamlit as st
 
 from services.github import analyze_github_profile
