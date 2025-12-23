@@ -13,6 +13,7 @@ Docker ビルド → Artifact Registry → Terraform apply のデプロイフロ
 
 ## Before You Start
 
+- **Dockerfile, main.tf を Read して現状を確認**（推測で操作しない）
 - `project-architecture` Skill を参照してインフラ構成を確認
 - `troubleshooting` Skill を参照してよくある問題を把握
 
