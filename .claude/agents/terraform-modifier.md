@@ -13,6 +13,7 @@ GCP インフラ (Cloud Run + LB + IAP) の Terraform 定義を担当。
 
 ## Before You Start
 
+- **関連する .tf ファイルを Read してから作業開始**（推測で書かない）
 - `coding-standards` Skill を参照して Terraform ルールを確認
 - `project-architecture` Skill を参照してインフラ構成を確認
 

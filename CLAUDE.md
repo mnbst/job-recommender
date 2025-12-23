@@ -50,6 +50,11 @@ GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検
 | Python実装 | [python-dev](./.claude/agents/python-dev.md) |
 | Terraform修正 | [terraform-modifier](./.claude/agents/terraform-modifier.md) |
 | デプロイ | [deployer](./.claude/agents/deployer.md) |
+| コードレビュー | [code-reviewer](./.claude/agents/code-reviewer.md) |
+| テスト | [tester](./.claude/agents/tester.md) |
+| ドキュメント | [documenter](./.claude/agents/documenter.md) |
+| デバッグ | [debugger](./.claude/agents/debugger.md) |
+| 移行 | [migrator](./.claude/agents/migrator.md) |
 
 ## Quick Commands
 ```bash

@@ -13,6 +13,7 @@ Streamlit + Vertex AI + SerpAPI を使った求人レコメンダーの Python �
 
 ## Before You Start
 
+- **関連コードを Read してから作業開始**（推測で書かない）
 - `coding-standards` Skill を参照してコーディング規約を確認
 - `project-architecture` Skill を参照してデータフローを確認
 
