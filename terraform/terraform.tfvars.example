@@ -1,6 +1,6 @@
-project_id        = "your-project-id"
-iap_support_email = "your-email@example.com"
-github_token      = "ghp_xxxxxxxxxxxx"
+project_id               = "your-project-id"
+iap_oauth2_client_id     = "xxxx.apps.googleusercontent.com"
+iap_oauth2_client_secret = "GOCSPX-xxxxx"
 
 authorized_members = [
   "user:your-email@example.com",

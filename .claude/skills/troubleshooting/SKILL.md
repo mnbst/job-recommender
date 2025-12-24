@@ -9,9 +9,15 @@ allowed-tools: Read, Grep, Glob, Bash
 ## Common Issues
 
 ### 1. SSL証明書がプロビジョニングされない
-- **原因**: DNS未設定 or 時間不足
-- **確認**: `terraform output load_balancer_ip` → DNSがこのIPを指しているか
-- **対処**: 最大15分待機。nip.ioドメインならDNS設定不要
+- **原因**: DNS未設定 or 時間不足（発行まで15〜60分）
+- **確認**:
+```bash
+# 証明書の状態確認
+gcloud compute ssl-certificates describe job-recommender-cert-nipio --global \
+  --format="value(managed.status,managed.domainStatus)"
+# PROVISIONING=発行中, ACTIVE=完了, FAILED_NOT_VISIBLE=DNS検証失敗
+```
+- **対処**: ACTIVEになるまで待機。nip.ioドメインならDNS設定不要
 
 ### 2. IAP認証失敗 (403)
 - **原因**: ユーザーがauthorized_membersにない

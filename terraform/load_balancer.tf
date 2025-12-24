@@ -29,8 +29,8 @@ resource "google_compute_backend_service" "app" {
 
   iap {
     enabled              = true
-    oauth2_client_id     = google_iap_client.app.client_id
-    oauth2_client_secret = google_iap_client.app.secret
+    oauth2_client_id     = var.iap_oauth2_client_id
+    oauth2_client_secret = var.iap_oauth2_client_secret
   }
 
   backend {
@@ -107,17 +107,8 @@ resource "google_compute_global_forwarding_rule" "http" {
 # ============================================
 # IAP (Identity-Aware Proxy)
 # ============================================
-
-resource "google_iap_brand" "app" {
-  support_email     = var.iap_support_email
-  application_title = "Job Recommender"
-  project           = data.google_project.project.number
-}
-
-resource "google_iap_client" "app" {
-  display_name = "IAP Client for Job Recommender"
-  brand        = google_iap_brand.app.name
-}
+# Note: OAuth Brand/Client は GCPコンソールで手動作成
+# google_iap_brand / google_iap_client は 2025年7月以降非推奨
 
 resource "google_iap_web_backend_service_iam_binding" "app" {
   project             = var.project_id
@@ -145,8 +136,3 @@ output "artifact_registry_url" {
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.app.repository_id}"
 }
 
-output "oauth_client_id" {
-  description = "OAuth Client ID for IAP"
-  value       = google_iap_client.app.client_id
-  sensitive   = true
-}
