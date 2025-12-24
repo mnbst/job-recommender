@@ -15,9 +15,15 @@ variable "authorized_members" {
   default     = []
 }
 
-variable "iap_support_email" {
-  description = "Support email for IAP OAuth consent screen (required)"
+variable "iap_oauth2_client_id" {
+  description = "OAuth2 Client ID for IAP (create manually in GCP Console)"
   type        = string
+}
+
+variable "iap_oauth2_client_secret" {
+  description = "OAuth2 Client Secret for IAP (create manually in GCP Console)"
+  type        = string
+  sensitive   = true
 }
 
 variable "domain_name" {

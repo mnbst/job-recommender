@@ -72,7 +72,9 @@ uv run ruff check . && uv run ruff format .
 gcloud builds submit --tag asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
 
 # Terraform
-cd terraform && terraform plan && terraform apply
+cd terraform
+terraform init -backend-config="bucket=${PROJECT_ID}-tfstate"
+terraform plan && terraform apply
 ```
 
 ## Environment Variables

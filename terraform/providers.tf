@@ -1,6 +1,12 @@
 terraform {
   required_version = ">= 1.6.0"
 
+  backend "gcs" {
+    # bucket は terraform init 時に指定:
+    # terraform init -backend-config="bucket=${PROJECT_ID}-tfstate"
+    prefix = "job-recommender"
+  }
+
   required_providers {
     google = {
       source  = "hashicorp/google"
