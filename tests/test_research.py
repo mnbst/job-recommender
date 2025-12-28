@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 from services.research import (
+    JobPreferences,
     JobRecommendation,
     JobSearchResult,
     JobSource,
@@ -74,7 +75,7 @@ class TestBuildSearchPrompt:
 
     def test_build_prompt_with_full_profile(self, sample_profile_dict: dict):
         """Test prompt building with complete profile."""
-        prompt = build_search_prompt(sample_profile_dict, "Tokyo")
+        prompt = build_search_prompt(sample_profile_dict, JobPreferences(location="Tokyo"))
 
         assert "Tokyo" in prompt
         assert "Python" in prompt or "TypeScript" in prompt
@@ -86,7 +87,7 @@ class TestBuildSearchPrompt:
             "tech_stack": {"languages": [], "frameworks": []},
             "job_fit": {"ideal_roles": []},
         }
-        prompt = build_search_prompt(empty_profile, "Japan")
+        prompt = build_search_prompt(empty_profile, JobPreferences(location="Japan"))
 
         assert "Japan" in prompt
         assert "Software Engineer" in prompt  # Default role
@@ -98,7 +99,7 @@ class TestBuildSearchPrompt:
             "tech_stack": {"languages": ["Python"], "frameworks": ["Django"]},
             "job_fit": {"ideal_roles": ["Backend Engineer"]},
         }
-        prompt = build_search_prompt(profile, "San Francisco")
+        prompt = build_search_prompt(profile, JobPreferences(location="San Francisco"))
 
         assert "San Francisco" in prompt
 
@@ -153,7 +154,7 @@ class TestSearchJobs:
         mock_perplexity_class.return_value = mock_client
 
         with patch.dict("os.environ", {"PERPLEXITY_API_KEY": "test-key"}):
-            result = search_jobs(sample_profile_dict, location="Tokyo")
+            result = search_jobs(sample_profile_dict, JobPreferences(location="Tokyo"))
 
         assert result.status == "success"
         assert len(result.recommendations) == 1
