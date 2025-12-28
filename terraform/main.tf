@@ -19,6 +19,14 @@ data "google_secret_manager_secret" "perplexity" {
   secret_id = "perplexity_api_key"
 }
 
+data "google_secret_manager_secret" "github_oauth_client_id" {
+  secret_id = "github_oauth_client_id"
+}
+
+data "google_secret_manager_secret" "github_oauth_client_secret" {
+  secret_id = "github_oauth_client_secret"
+}
+
 # ============================================
 # Service Account
 # ============================================
@@ -37,6 +45,20 @@ resource "google_secret_manager_secret_iam_member" "github_token_access" {
 # Secret Managerへのアクセス権限 (Perplexity)
 resource "google_secret_manager_secret_iam_member" "perplexity_access" {
   secret_id = data.google_secret_manager_secret.perplexity.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.app.email}"
+}
+
+# Secret Managerへのアクセス権限 (GitHub OAuth Client ID)
+resource "google_secret_manager_secret_iam_member" "github_oauth_client_id_access" {
+  secret_id = data.google_secret_manager_secret.github_oauth_client_id.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.app.email}"
+}
+
+# Secret Managerへのアクセス権限 (GitHub OAuth Client Secret)
+resource "google_secret_manager_secret_iam_member" "github_oauth_client_secret_access" {
+  secret_id = data.google_secret_manager_secret.github_oauth_client_secret.secret_id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.app.email}"
 }
@@ -76,6 +98,11 @@ resource "google_cloud_run_v2_service" "app" {
       }
 
       env {
+        name  = "PYTHONUNBUFFERED"
+        value = "1"
+      }
+
+      env {
         name  = "GCP_PROJECT_ID"
         value = var.project_id
       }
@@ -103,6 +130,31 @@ resource "google_cloud_run_v2_service" "app" {
             version = "latest"
           }
         }
+      }
+
+      env {
+        name = "GITHUB_OAUTH_CLIENT_ID"
+        value_source {
+          secret_key_ref {
+            secret  = data.google_secret_manager_secret.github_oauth_client_id.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "GITHUB_OAUTH_CLIENT_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = data.google_secret_manager_secret.github_oauth_client_secret.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name  = "OAUTH_REDIRECT_URI"
+        value = "https://${google_compute_global_address.lb_ip.address}.nip.io"
       }
     }
 

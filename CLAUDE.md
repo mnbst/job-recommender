@@ -25,6 +25,7 @@ Python 3.11+ | Streamlit | Vertex AI (Gemini) | Perplexity AI (求人検索) | T
 ```
 app.py           → Streamlit UIエントリーポイント
 services/
+  auth.py        → GitHub OAuth認証
   github.py      → GitHub API (PyGithub) - RepoInfo取得
   profile.py     → Vertex AI Gemini - プロファイル生成
   research.py    → Perplexity AI - 求人検索 + マッチング分析
@@ -81,11 +82,28 @@ terraform plan && terraform apply
 Secret Managerで管理（Terraformは参照のみ）:
 | シークレット名 | 用途 |
 |---------------|------|
-| `github_token` | GitHub PAT |
+| `github_token` | GitHub PAT（リポジトリ取得用） |
 | `perplexity_api_key` | Perplexity APIキー |
+| `github_oauth_client_id` | GitHub OAuth App Client ID |
+| `github_oauth_client_secret` | GitHub OAuth App Client Secret |
 
 Cloud Runに自動注入される環境変数:
 - `GITHUB_TOKEN` - Secret Managerから
 - `PERPLEXITY_API_KEY` - Secret Managerから
+- `GITHUB_OAUTH_CLIENT_ID` - Secret Managerから
+- `GITHUB_OAUTH_CLIENT_SECRET` - Secret Managerから
+- `OAUTH_REDIRECT_URI` - LB URLから自動生成
 - `GCP_PROJECT_ID` - Terraform変数から
 - `GCP_LOCATION` - Terraform変数から
+
+## GitHub OAuth App 設定
+1. https://github.com/settings/developers → New OAuth App
+2. 設定値:
+   - Application name: `Job Recommender`
+   - Homepage URL: `https://<LB_IP>.nip.io`
+   - Authorization callback URL: `https://<LB_IP>.nip.io`
+3. Client ID/Secret を Secret Manager に登録:
+```bash
+echo -n "YOUR_CLIENT_ID" | gcloud secrets create github_oauth_client_id --data-file=-
+echo -n "YOUR_CLIENT_SECRET" | gcloud secrets create github_oauth_client_secret --data-file=-
+```
