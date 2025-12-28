@@ -62,6 +62,21 @@ gcloud secrets versions access latest --secret=perplexity_api_key
 - **対処**: https://www.perplexity.ai でAPIキー確認、クォータ確認
 - **注意**: 初回JSON Schemaリクエストは10-30秒かかる可能性あり
 
+### 8. Terraform初回: Cloud Runイメージが見つからない
+- **原因**: Artifact Registryにイメージがない状態でterraform apply
+- **エラー**: `Image '...app:latest' not found`
+- **対処**: 先にイメージをビルド&プッシュ
+```bash
+# 1. Artifact Registryだけ先に作成
+terraform apply -target=google_artifact_registry_repository.app
+
+# 2. イメージをビルド&プッシュ
+gcloud builds submit --tag asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
+
+# 3. 残りのリソースを作成
+terraform apply
+```
+
 ## Useful Commands
 
 ```bash

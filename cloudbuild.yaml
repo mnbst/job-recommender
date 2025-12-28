@@ -1,4 +1,24 @@
 steps:
+  # Install dependencies and run tests
+  - name: 'python:3.11-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install uv --quiet
+        uv sync --frozen
+        uv run pytest
+
+  # Run linter and formatter check
+  - name: 'python:3.11-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install uv --quiet
+        uv sync --frozen
+        uv run ruff check . && uv run ruff format --check .
+
   # Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -15,6 +35,17 @@ steps:
       - 'push'
       - '--all-tags'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - 'gcloud'
+      - 'run'
+      - 'deploy'
+      - 'job-recommender'
+      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA}'
+      - '--region=${_REGION}'
+      - '--platform=managed'
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA}'
