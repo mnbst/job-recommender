@@ -134,6 +134,7 @@ terraform apply
 <details>
 <summary>日誌一覧</summary>
 
+- [2025-12-28](./updates/2025-12-28.md)
 - [2025-12-27](./updates/2025-12-27.md)
 - [2025-12-25](./updates/2025-12-25.md)
 - [2025-12-24](./updates/2025-12-24.md)
