@@ -87,7 +87,9 @@ def sample_profile() -> DeveloperProfile:
             completion_rate="プロジェクトを完遂する力がある",
         ),
         notable_projects=[
-            NotableProject(name="web-app", highlight="モダンなフロントエンド技術の活用"),
+            NotableProject(
+                name="web-app", highlight="モダンなフロントエンド技術の活用"
+            ),
             NotableProject(name="api-server", highlight="本格的なAPI設計"),
         ],
         interests=["クラウドネイティブ", "マイクロサービス", "DevOps"],

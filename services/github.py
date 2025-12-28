@@ -181,7 +181,9 @@ def get_main_files(repo: Repository, structure: list[str]) -> list[FileContent]:
 
     # src/やapp/ディレクトリ内も検索
     search_paths = [""] + [
-        f"{d}/" for d in ["src", "app", "lib", "cmd"] if any(p.startswith(d + "/") for p in structure)
+        f"{d}/"
+        for d in ["src", "app", "lib", "cmd"]
+        if any(p.startswith(d + "/") for p in structure)
     ]
 
     for main_file in MAIN_FILE_PATTERNS:
@@ -192,7 +194,9 @@ def get_main_files(repo: Repository, structure: list[str]) -> list[FileContent]:
                 content = get_file_content(repo, actual_path)
                 if content:
                     # 長すぎる場合は切り詰め
-                    results.append(FileContent(path=actual_path, content=content[:3000]))
+                    results.append(
+                        FileContent(path=actual_path, content=content[:3000])
+                    )
                     break
 
     return results[:3]  # 最大3ファイル
