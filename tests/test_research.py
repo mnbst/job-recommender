@@ -75,7 +75,9 @@ class TestBuildSearchPrompt:
 
     def test_build_prompt_with_full_profile(self, sample_profile_dict: dict):
         """Test prompt building with complete profile."""
-        prompt = build_search_prompt(sample_profile_dict, JobPreferences(location="Tokyo"))
+        prompt = build_search_prompt(
+            sample_profile_dict, JobPreferences(location="Tokyo")
+        )
 
         assert "Tokyo" in prompt
         assert "Python" in prompt or "TypeScript" in prompt
