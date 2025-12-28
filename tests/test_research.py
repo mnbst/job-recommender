@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-
 from services.research import (
     JobRecommendation,
     JobSearchResult,
@@ -186,9 +185,7 @@ class TestSearchJobs:
         """Test search_jobs handles empty recommendations."""
         mock_response = MagicMock()
         mock_response.choices = [
-            MagicMock(
-                message=MagicMock(content='{"recommendations": []}')
-            )
+            MagicMock(message=MagicMock(content='{"recommendations": []}'))
         ]
 
         mock_client = MagicMock()

@@ -2,17 +2,15 @@
 
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-# .env.local から環境変数を読み込み
-load_dotenv(Path(__file__).parent / ".env.local")
-
 import streamlit as st
+from dotenv import load_dotenv
 
 from services.github import analyze_github_profile
 from services.profile import generate_profile
 from services.research import search_jobs
 
+# .env.local から環境変数を読み込み
+load_dotenv(Path(__file__).parent / ".env.local")
 # Page config
 st.set_page_config(
     page_title="Job Recommender",
@@ -91,10 +89,7 @@ if analyze_button and github_username:
             with st.spinner("求人を検索・分析中..."):
                 job_results = search_jobs(profile, location=job_location)
 
-                if (
-                    job_results.status == "success"
-                    and job_results.recommendations
-                ):
+                if job_results.status == "success" and job_results.recommendations:
                     st.success(
                         f"✅ {len(job_results.recommendations)}件の求人がレコメンドされました"
                     )
@@ -124,9 +119,7 @@ if analyze_button and github_username:
                             with col2:
                                 st.write("**ソース:**")
                                 for source in rec.sources:
-                                    st.markdown(
-                                        f"- [{source.used_for}]({source.url})"
-                                    )
+                                    st.markdown(f"- [{source.used_for}]({source.url})")
 
                 else:
                     error_msg = job_results.error or "求人検索に失敗しました"

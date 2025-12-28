@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from langchain_core.output_parsers import PydanticOutputParser
 
 from services.github import RepoInfo

@@ -19,7 +19,3 @@ dev = [
     "ruff>=0.1.0",
 ]
 
-[tool.ruff]
-line-length = 88
-target-version = "py311"
-
