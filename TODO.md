@@ -4,15 +4,6 @@
 
 ### 高優先度
 
-- [ ] **CI/CDにデプロイ追加**
-  - cloudbuild.yaml に `gcloud run deploy` ステップ追加
-  - ビルド成功後に自動デプロイ
-
-- [ ] **CI/CDにテスト・Lint追加**
-  - `uv run pytest` ステップ追加
-  - `uv run ruff check . && ruff format --check .` ステップ追加
-  - テスト失敗時はデプロイをスキップ
-
 - [ ] **terraform.tfvarsの機密情報保護**
   - `.gitignore` に追加
   - `terraform.tfvars.example` をテンプレートとして作成
@@ -26,19 +17,6 @@
   - 応答時間 > 3秒 で通知
   - 通知チャンネル設定（Email/Slack）
 
-- [ ] **ヘルスチェック追加**
-  - `google_compute_health_check` リソース追加
-  - Backend Service に関連付け
-
-- [ ] **Cold Start対策**
-  - Cloud Run に `min_instance_count = 1` 設定
-  - コスト増加（約$30/月）を考慮
-
-- [ ] **Cloud Armor追加**
-  - DDoS対策
-  - Rate Limiting設定
-  - 必要に応じてGeoIPフィルタリング
-
 ### 低優先度
 
 - [ ] **Blue-Greenデプロイ対応**
@@ -48,15 +26,6 @@
 - [ ] **構造化ログ実装**
   - JSONフォーマットでログ出力
   - Cloud Logging との統合強化
-
-- [ ] **マルチリージョン対応**
-  - asia-northeast1 + us-central1
-  - Global Load Balancer でフェイルオーバー
-
-- [ ] **ドキュメント整備**
-  - デプロイ手順書
-  - 緊急復旧手順（ロールバック方法）
-  - アーキテクチャ図
 
 ---
 
