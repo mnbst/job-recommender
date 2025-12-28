@@ -3,8 +3,8 @@
 ## Phase 1: マネタイズ基盤（優先）
 
 ### Step 1: ユーザー認証
-- [ ] GitHub OAuth ログイン実装
-- [ ] ユーザーセッション管理（Streamlit session_state）
+- [x] GitHub OAuth ログイン実装
+- [x] ユーザーセッション管理（Streamlit session_state）
 - [ ] Firestore でユーザー情報保存
 
 ### Step 2: フリーミアム機能制限
@@ -89,6 +89,9 @@
 
 ## 完了済み
 
+- [x] GitHub OAuth ログイン実装（2025-12-28）
+- [x] ユーザーセッション管理（2025-12-28）
+- [x] 求人検索の希望条件機能（JobPreferences）（2025-12-28）
 - [x] Cloud Build CI/CD パイプライン構築（2025-12-27）
 - [x] GitHub 2nd gen 接続設定（2025-12-27）
 - [x] Artifact Registry 自動Push（2025-12-27）
