@@ -8,6 +8,11 @@ steps:
         pip install uv --quiet
         uv sync --frozen
         uv run pytest
+    volumes:
+      - name: 'uv-cache'
+        path: '/root/.cache/uv'
+      - name: 'venv'
+        path: '/workspace/.venv'
 
   # Run linter and formatter check
   - name: 'python:3.11-slim'
@@ -18,6 +23,11 @@ steps:
         pip install uv --quiet
         uv sync --frozen
         uv run ruff check . && uv run ruff format --check .
+    volumes:
+      - name: 'uv-cache'
+        path: '/root/.cache/uv'
+      - name: 'venv'
+        path: '/workspace/.venv'
 
   # Build Docker image
   - name: 'gcr.io/cloud-builders/docker'

@@ -38,3 +38,10 @@ resource "google_project_iam_member" "cloudbuild_artifact_registry" {
   role    = "roles/artifactregistry.writer"
   member  = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
 }
+
+# Compute Engine サービスアカウント（Cloud Buildトリガーで使用）にロギング権限を付与
+resource "google_project_iam_member" "cloudbuild_logging" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
