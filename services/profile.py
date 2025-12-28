@@ -92,8 +92,7 @@ def generate_profile(repos: list[RepoInfo]) -> dict:
                 for f in repo.dependency_files
             ],
             "code_samples": [
-                {"path": f.path, "content": f.content[:1500]}
-                for f in repo.main_files
+                {"path": f.path, "content": f.content[:1500]} for f in repo.main_files
             ],
         }
         repo_summaries.append(summary)

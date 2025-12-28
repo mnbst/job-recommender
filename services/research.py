@@ -59,9 +59,9 @@ def build_search_prompt(profile: dict, location: str) -> str:
     return f"""You are a job search assistant.
 
 Search the web and find up to 3 job postings that match the following criteria:
-- Role: {', '.join(roles) if roles else 'Software Engineer'}
+- Role: {", ".join(roles) if roles else "Software Engineer"}
 - Location: {location}
-- Skills: {', '.join(skills) if skills else 'any'}
+- Skills: {", ".join(skills) if skills else "any"}
 
 For each recommended job:
 - Explain WHY it is a good match for the user
