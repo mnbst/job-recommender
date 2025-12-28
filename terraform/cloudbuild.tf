@@ -45,3 +45,17 @@ resource "google_project_iam_member" "cloudbuild_logging" {
   role    = "roles/logging.logWriter"
   member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
+
+# Compute Engine サービスアカウントに Cloud Run デプロイ権限を付与
+resource "google_project_iam_member" "cloudbuild_run_admin" {
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
+
+# Compute Engine サービスアカウントにサービスアカウント利用権限を付与
+resource "google_project_iam_member" "cloudbuild_sa_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
