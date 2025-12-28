@@ -77,6 +77,15 @@ gcloud builds submit --tag asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-reco
 terraform apply
 ```
 
+### 9. Secret Manager更新後も反映されない
+- **原因**: Cloud Runは起動時にシークレットを読み込むため、`version = "latest"`でも再デプロイが必要
+- **対処**:
+```bash
+# 新しいリビジョンを強制デプロイ
+gcloud run deploy job-recommender --region=asia-northeast1 \
+  --image=asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
+```
+
 ## Useful Commands
 
 ```bash
