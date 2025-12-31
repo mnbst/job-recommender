@@ -476,6 +476,22 @@ wheels = [
 ]
 
 [[package]]
+name = "google-cloud-firestore"
+version = "2.22.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "google-cloud-core" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/a9/73ed7e865e4fe901dbc86b556d56f0017e71cd3ff93b22c0768eee7af240/google_cloud_firestore-2.22.0.tar.gz", hash = "sha256:9d6a5bdefb30ed5ca94a7cb3560873352a3dbf868957ef789e6e74d086d52d82", size = 547788, upload-time = "2025-12-17T00:48:07.057Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3a/0c/391ec5773cb83615a5684f6ae185a796aeb1ecc24a13c1d2685207bbf2e8/google_cloud_firestore-2.22.0-py3-none-any.whl", hash = "sha256:47652ca74a77903c192fe194f646871ca2f881e56c30e7f573a9782d3bdbb610", size = 377167, upload-time = "2025-12-17T00:48:04.665Z" },
+]
+
+[[package]]
 name = "google-cloud-logging"
 version = "3.13.0"
 source = { registry = "https://pypi.org/simple" }
@@ -770,6 +786,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "google-cloud-aiplatform" },
+    { name = "google-cloud-firestore" },
     { name = "google-cloud-logging" },
     { name = "httpx" },
     { name = "langchain-core" },
@@ -788,6 +805,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-cloud-aiplatform", specifier = ">=1.38.0" },
+    { name = "google-cloud-firestore", specifier = ">=2.16.0" },
     { name = "google-cloud-logging", specifier = ">=3.0.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "langchain-core", specifier = ">=0.3.0" },

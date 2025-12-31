@@ -81,12 +81,12 @@ echo -n "pplx-xxxxx" | gcloud secrets versions add perplexity_api_key --data-fil
 # 依存関係インストール
 uv sync
 
-# GCP 認証（初回のみ）
-gcloud auth application-default login
-gcloud config set project YOUR_PROJECT_ID
+# GCP 認証（未認証の場合のみ実行される）
+./scripts/load-env.sh
 
-# 環境変数読み込み
-source ./scripts/load-env.sh
+# 環境変数設定（.env.local を作成）
+cp .env.local.example .env.local
+# .env.local を編集して各種APIキーを設定
 
 # 起動
 uv run streamlit run app.py
@@ -116,7 +116,7 @@ terraform apply
 │   ├── profile.py         # プロファイル生成
 │   └── research.py        # Perplexity AI 求人検索+マッチング
 ├── scripts/
-│   └── load-env.sh        # 環境変数読み込みスクリプト
+│   └── load-env.sh        # GCP認証スクリプト
 ├── terraform/             # インフラ定義
 │   ├── main.tf            # Cloud Run, Secret Manager, IAM
 │   ├── load_balancer.tf   # LB, IAP, SSL証明書
@@ -134,6 +134,7 @@ terraform apply
 <details>
 <summary>日誌一覧</summary>
 
+- [2025-12-31](./updates/2025-12-31.md)
 - [2025-12-28](./updates/2025-12-28.md)
 - [2025-12-27](./updates/2025-12-27.md)
 - [2025-12-25](./updates/2025-12-25.md)
