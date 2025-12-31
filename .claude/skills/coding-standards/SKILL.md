@@ -29,6 +29,34 @@ class RepoInfo:
     stars: int
 ```
 
+## Streamlit
+
+| ルール | 詳細 |
+|--------|------|
+| 状態管理 | `st.session_state` でフラグ管理 |
+| ボタン処理 | `on_click` コールバック使用、`st.rerun()` は避ける |
+| レイアウト | `st.columns` の `vertical_alignment` で揃える |
+
+### ボタン + 状態管理パターン
+
+```python
+# NG: st.rerun() を使う
+if st.button("実行"):
+    do_something()
+    st.rerun()  # 避ける
+
+# OK: on_click + session_state
+def on_click_handler(arg: str) -> None:
+    st.session_state["should_execute"] = True
+    st.session_state["arg"] = arg
+
+st.button("実行", on_click=on_click_handler, args=("value",))
+
+if st.session_state.get("should_execute", False):
+    st.session_state["should_execute"] = False  # リセット
+    do_something(st.session_state["arg"])
+```
+
 ## Terraform
 
 | ルール | 詳細 |

@@ -2,11 +2,25 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(poetry lock:*)"
+      "Bash(poetry lock:*)",
+      "Bash(gcloud secrets versions access:*)"
     ]
   },
   "sandbox": {
     "enabled": false,
     "autoAllowBashIfSandboxed": false
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ruff check --fix $CLAUDE_FILE_PATHS"
+          }
+        ]
+      }
+    ]
   }
 }
