@@ -63,12 +63,25 @@ def build_search_prompt(profile: dict, preferences: JobPreferences) -> str:
     """Build Perplexity search prompt from developer profile."""
     tech_stack = profile.get("tech_stack", {})
     job_fit = profile.get("job_fit", {})
+    skill_assessment = profile.get("skill_assessment", {})
+    interests = profile.get("interests", [])[:5]
 
     roles = job_fit.get("ideal_roles", [])[:3]
     languages = tech_stack.get("languages", [])[:3]
     frameworks = tech_stack.get("frameworks", [])[:3]
+    infrastructure = tech_stack.get("infrastructure", [])[:3]
+    keywords = job_fit.get("keywords", [])[:5]
 
-    skills = languages + frameworks
+    skills = languages + frameworks + infrastructure
+
+    # スキル評価の要約を構築
+    expertise_summary = []
+    if skill_assessment.get("code_quality"):
+        expertise_summary.append(
+            f"コード品質: {skill_assessment['code_quality'][:100]}"
+        )
+    if skill_assessment.get("design_ability"):
+        expertise_summary.append(f"設計力: {skill_assessment['design_ability'][:100]}")
 
     # 希望条件を構築
     conditions = [f"勤務地: {preferences.location}"]
@@ -82,16 +95,26 @@ def build_search_prompt(profile: dict, preferences: JobPreferences) -> str:
         conditions.append(f"その他: {preferences.other}")
 
     conditions_text = "\n- ".join(conditions)
+    keywords_text = ", ".join(keywords) if keywords else ""
+    interests_text = ", ".join(interests) if interests else ""
+    expertise_text = "\n".join(expertise_summary) if expertise_summary else ""
 
     return f"""You are a job search assistant.
 
 Search the web and find up to 3 job postings that match the following criteria:
 - Role: {", ".join(roles) if roles else "Software Engineer"}
 - Skills: {", ".join(skills) if skills else "any"}
+- Keywords: {keywords_text}
 - {conditions_text}
 
+User's profile for personalized matching:
+- Interests: {interests_text}
+- Expertise:
+{expertise_text}
+
 For each recommended job:
-- Explain WHY it is a good match for the user
+- Explain WHY it is a good match based on the user's SPECIFIC skills, expertise, and interests
+- Reference the user's actual experience (e.g., "Your Terraform + IAP implementation experience matches...")
 - Clearly state which criteria are satisfied
 - Provide the explanation in Japanese
 - Provide the original job posting URL as evidence
@@ -147,11 +170,17 @@ def search_jobs(
     tech_stack = profile.get("tech_stack", {})
     job_fit = profile.get("job_fit", {})
     roles = job_fit.get("ideal_roles", [])[:3]
-    skills = tech_stack.get("languages", [])[:3] + tech_stack.get("frameworks", [])[:3]
+    skills = (
+        tech_stack.get("languages", [])[:3]
+        + tech_stack.get("frameworks", [])[:3]
+        + tech_stack.get("infrastructure", [])[:3]
+    )
+    keywords = job_fit.get("keywords", [])[:5]
 
     search_params = {
         "role": roles if roles else ["Software Engineer"],
         "skills": skills if skills else [],
+        "keywords": keywords if keywords else [],
         "location": preferences.location,
         "salary_range": preferences.salary_range,
         "work_style": preferences.work_style or [],
@@ -173,6 +202,7 @@ def search_jobs(
         completion = client.chat.completions.create(
             model="sonar-pro",
             messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
             response_format={
                 "type": "json_schema",
                 "json_schema": {
