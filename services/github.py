@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass, field
 
 from github import Github
+from github.ContentFile import ContentFile
 from github.Repository import Repository
 
 # 依存ファイルのパターン
@@ -106,8 +107,11 @@ def get_repo_structure(repo: Repository, max_depth: int = 2) -> list[str]:
     """
     files: list[str] = []
     try:
-        contents = list(repo.get_contents(""))
-        queue: list[tuple] = [(item, 0) for item in contents]
+        contents = repo.get_contents("")
+        if isinstance(contents, list):
+            queue: list[tuple[ContentFile, int]] = [(item, 0) for item in contents]
+        else:
+            queue = [(contents, 0)]
 
         while queue:
             item, depth = queue.pop(0)
@@ -138,7 +142,7 @@ def get_file_content(repo: Repository, path: str) -> str | None:
     """
     try:
         file = repo.get_contents(path)
-        if hasattr(file, "decoded_content"):
+        if isinstance(file, ContentFile):
             return file.decoded_content.decode("utf-8")
     except Exception:
         pass
