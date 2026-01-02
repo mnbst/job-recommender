@@ -6,6 +6,10 @@
 - [x] GitHub OAuth ログイン実装
 - [x] ユーザーセッション管理（Streamlit session_state）
 - [x] Firestore でユーザー情報保存
+- [x] セッション永続化（JWT + Firestore ハイブリッド）
+  - JWT Cookie: ユーザーID・ログイン名のみ
+  - Firestore: GitHubアクセストークン保存
+  - 有効期限1日、Secret Manager に JWT_SECRET 追加済み
 
 ### Step 2: フリーミアム機能制限
 - [ ] 無料プラン制限実装
@@ -75,6 +79,20 @@
 
 ## Phase 4: インフラ改善（後回し）
 
+- [ ] 一般公開対応（IAP削除）
+  - load_balancer.tf: `iap` ブロック削除
+  - load_balancer.tf: `google_iap_web_backend_service_iam_binding` 削除
+  - main.tf: `iap_invoker` IAM バインディング削除
+  - variables.tf: `iap_oauth2_client_id`, `iap_oauth2_client_secret`, `authorized_members` 削除
+  - terraform.tfvars: IAP設定行削除
+  - main.tf: `allUsers` に `roles/run.invoker` 付与（LB経由のみ許可）
+  - CLAUDE.md 更新
+- [ ] カスタムドメイン取得・設定
+  - ドメイン取得（Google Domains / Cloudflare など）
+  - Cloud DNS ゾーン作成
+  - SSL証明書（Google-managed）設定
+  - Load Balancer にドメイン紐付け
+  - GitHub OAuth App の callback URL 更新
 - [ ] terraform.tfvars の機密情報保護
 - [ ] アラート設定（monitoring.tf）
 - [ ] Blue-Green デプロイ対応
