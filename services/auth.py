@@ -1,15 +1,19 @@
 """GitHub OAuth 認証サービス."""
 
+from __future__ import annotations
+
 import os
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
 import httpx
 import streamlit as st
 
-GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
-GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
-GITHUB_USER_URL = "https://api.github.com/user"
+from services.const import GITHUB_AUTHORIZE_URL, GITHUB_TOKEN_URL, GITHUB_USER_URL
+
+if TYPE_CHECKING:
+    import extra_streamlit_components as stx
 
 
 @dataclass
@@ -84,10 +88,14 @@ def get_github_user(access_token: str) -> GitHubUser | None:
     return None
 
 
-def handle_oauth_callback() -> bool:
+def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bool:
     """OAuthコールバックを処理してユーザーを認証.
 
-    認証成功時はTrue、それ以外はFalseを返す.
+    Args:
+        cookie_manager: CookieManager（セッション永続化用、Noneの場合は永続化しない）
+
+    Returns:
+        認証成功時はTrue、それ以外はFalse
     """
     # 既に認証済みの場合はスキップ
     if is_authenticated():
@@ -120,6 +128,19 @@ def handle_oauth_callback() -> bool:
     st.session_state["user"] = user
     st.session_state["access_token"] = access_token
 
+    # セッション永続化
+    if cookie_manager is not None:
+        from services.session import (
+            generate_session_id,
+            save_firestore_session,
+            set_session_cookie,
+        )
+
+        session_id = generate_session_id()
+        save_firestore_session(session_id, user, access_token)
+        set_session_cookie(cookie_manager, session_id)
+        st.session_state["session_id"] = session_id
+
     # クエリパラメータをクリア
     st.query_params.clear()
 
@@ -136,10 +157,23 @@ def is_authenticated() -> bool:
     return get_current_user() is not None
 
 
-def logout() -> None:
-    """ユーザーセッションをクリア."""
+def logout(cookie_manager: stx.CookieManager | None = None) -> None:
+    """ユーザーセッションをクリア.
+
+    Args:
+        cookie_manager: CookieManager（セッション削除用、Noneの場合はローカルのみクリア）
+    """
+    # 永続化セッションの削除
+    session_id = st.session_state.get("session_id")
+    if session_id and cookie_manager is not None:
+        from services.session import delete_firestore_session, delete_session_cookie
+
+        delete_firestore_session(session_id)
+        delete_session_cookie(cookie_manager)
+
     st.session_state.pop("user", None)
     st.session_state.pop("access_token", None)
+    st.session_state.pop("session_id", None)
 
 
 def render_login_button(redirect_uri: str) -> None:
@@ -154,8 +188,12 @@ def render_login_button(redirect_uri: str) -> None:
     st.link_button("GitHubでログイン", auth_url, use_container_width=True)
 
 
-def render_user_info() -> None:
-    """認証済みユーザー情報を表示."""
+def render_user_info(cookie_manager: stx.CookieManager | None = None) -> None:
+    """認証済みユーザー情報を表示.
+
+    Args:
+        cookie_manager: CookieManager（ログアウト時のセッション削除用）
+    """
     user = get_current_user()
     if not user:
         return
@@ -168,5 +206,52 @@ def render_user_info() -> None:
         st.write(f"@{user.login}")
 
     if st.button("ログアウト", type="secondary"):
-        logout()
+        logout(cookie_manager)
         st.rerun()
+
+
+def restore_session(cookie_manager: stx.CookieManager) -> bool:
+    """Cookieからセッションを復元.
+
+    起動時に呼び出し、Cookieに有効なセッションがあれば復元する。
+
+    Args:
+        cookie_manager: CookieManager
+
+    Returns:
+        復元成功時はTrue、それ以外はFalse
+    """
+    # 既に認証済みならスキップ
+    if is_authenticated():
+        return True
+
+    from services.session import (
+        delete_session_cookie,
+        get_firestore_session,
+        get_session_cookie,
+        restore_session_from_dict,
+        update_session_last_accessed,
+    )
+
+    # Cookieからsession_idを取得
+    session_id = get_session_cookie(cookie_manager)
+    if not session_id:
+        return False
+
+    # Firestoreからセッションを取得
+    session_data = get_firestore_session(session_id)
+    if not session_data:
+        # セッションが無効 → Cookie削除
+        delete_session_cookie(cookie_manager)
+        return False
+
+    # セッション復元
+    user, access_token = restore_session_from_dict(session_data)
+    st.session_state["user"] = user
+    st.session_state["access_token"] = access_token
+    st.session_state["session_id"] = session_id
+
+    # last_accessed_at を更新
+    update_session_last_accessed(session_id)
+
+    return True

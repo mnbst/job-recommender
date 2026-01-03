@@ -1,5 +1,5 @@
 # ============================================
-# Cloud Load Balancer + IAP
+# Cloud Load Balancer
 # ============================================
 
 # 静的IPアドレス（グローバル）
@@ -26,12 +26,6 @@ resource "google_compute_backend_service" "app" {
   timeout_sec           = 30
   enable_cdn            = false
   load_balancing_scheme = "EXTERNAL_MANAGED"
-
-  iap {
-    enabled              = true
-    oauth2_client_id     = var.iap_oauth2_client_id
-    oauth2_client_secret = var.iap_oauth2_client_secret
-  }
 
   backend {
     group = google_compute_region_network_endpoint_group.cloudrun_neg.id
@@ -102,19 +96,6 @@ resource "google_compute_global_forwarding_rule" "http" {
   port_range            = "80"
   target                = google_compute_target_http_proxy.redirect.id
   ip_address            = google_compute_global_address.lb_ip.id
-}
-
-# ============================================
-# IAP (Identity-Aware Proxy)
-# ============================================
-# Note: OAuth Brand/Client は GCPコンソールで手動作成
-# google_iap_brand / google_iap_client は 2025年7月以降非推奨
-
-resource "google_iap_web_backend_service_iam_binding" "app" {
-  project             = var.project_id
-  web_backend_service = google_compute_backend_service.app.name
-  role                = "roles/iap.httpsResourceAccessor"
-  members             = var.authorized_members
 }
 
 # ============================================

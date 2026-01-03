@@ -8,9 +8,8 @@ from typing import Any
 from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentSnapshot
 
+from services.const import CACHE_TTL_DAYS
 from services.github import FileContent, RepoInfo
-
-CACHE_TTL_DAYS = int(os.getenv("PROFILE_CACHE_TTL_DAYS", "7"))
 
 
 def get_firestore_client() -> firestore.Client:

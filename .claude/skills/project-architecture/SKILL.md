@@ -17,12 +17,14 @@ allowed-tools: Read, Grep, Glob
 ## Infrastructure
 
 ```
-Internet → Cloud LB (HTTPS) → IAP → Serverless NEG → Cloud Run (private)
-                                                          ↓
-                                                    VPC Connector → VPC
-                                                          ↓
-                                                    Vertex AI / Perplexity AI
+Internet → Cloud LB (HTTPS) → Serverless NEG → Cloud Run (public)
+                                                     ↓
+                                               VPC Connector → VPC
+                                                     ↓
+                                               Vertex AI / Perplexity AI
 ```
+
+認証: GitHub OAuth（アプリケーションレベル）
 
 ## Key Files
 
@@ -32,14 +34,14 @@ Internet → Cloud LB (HTTPS) → IAP → Serverless NEG → Cloud Run (private)
 | `services/github.py` | PyGithub、RepoInfoデータクラス |
 | `services/profile.py` | Vertex AI初期化、プロファイル生成 |
 | `services/research.py` | Perplexity AI、JobRecommendationデータクラス |
-| `terraform/` | インフラ定義 (Cloud Run + LB + IAP) |
+| `terraform/` | インフラ定義 (Cloud Run + LB) |
 
 ## Key Resources (Terraform)
 
 | Resource | Purpose |
 |----------|---------|
-| `google_cloud_run_v2_service` | プライベートingress、Streamlitコンテナ |
-| `google_compute_backend_service` | IAP有効、NEG接続 |
+| `google_cloud_run_v2_service` | 公開ingress、Streamlitコンテナ |
+| `google_compute_backend_service` | NEG接続 |
 | `google_compute_region_network_endpoint_group` | Serverless NEG |
 | `google_vpc_access_connector` | VPC接続 (10.8.0.0/28) |
 | `google_artifact_registry_repository` | Dockerイメージ保存 |

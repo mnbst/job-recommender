@@ -1,12 +1,7 @@
-project_id               = "your-project-id"
-iap_oauth2_client_id     = "xxxx.apps.googleusercontent.com"
-iap_oauth2_client_secret = "GOCSPX-xxxxx"
+project_id = "your-project-id"
 
-authorized_members = [
-  "user:your-email@example.com",
-  # "group:your-group@googlegroups.com",
-]
+# Cloud Build Repository ID (required)
+# cloudbuild_repository_id = "projects/xxx/locations/asia-northeast1/connections/xxx/repositories/xxx"
 
 # Optional
-# domain_name           = "job-recommender.example.com"
-# discovery_engine_app_id = "job-search-app"
+# domain_name = "job-recommender.example.com"
