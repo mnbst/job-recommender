@@ -332,46 +332,6 @@ if "profile" in st.session_state and is_authenticated():
                     if rec.salary_range:
                         st.write("**給与:**", rec.salary_range)
 
-                    @st.fragment
-                    def fetch_job_url(
-                        company: str,
-                        job_title: str,
-                        location: str,
-                        key: str,
-                        fallback_url: str | None,
-                    ) -> None:
-                        """求人URLを取得するフラグメント."""
-                        from services.research import search_job_url
-
-                        cache_key = f"job_url_{key}"
-
-                        # キャッシュがあれば表示
-                        if cache_key in st.session_state:
-                            result = st.session_state[cache_key]
-                            if result["url"]:
-                                st.link_button("📋 求人ページ", result["url"])
-                            elif fallback_url:
-                                st.link_button("📄 参考ページ", fallback_url)
-                            else:
-                                st.caption("❌ 見つかりません")
-                            return
-
-                        # ボタンで検索実行
-                        if st.button("🔗 リンク取得", key=f"btn_{key}"):
-                            with st.spinner("検索中..."):
-                                result = search_job_url(company, job_title, location)
-                                st.session_state[cache_key] = {
-                                    "url": result.url,
-                                    "status": result.status,
-                                }
-                                st.rerun(scope="fragment")
-
-                    job_key = f"{rec.company}_{rec.job_title}".replace(" ", "_")
-                    fallback = rec.sources[0].url if rec.sources else None
-                    fetch_job_url(
-                        rec.company, rec.job_title, rec.location, job_key, fallback
-                    )
-
                     st.write("---")
                     st.write("**マッチ理由:**")
                     st.info(rec.reason.summary)
@@ -385,7 +345,9 @@ if "profile" in st.session_state and is_authenticated():
                         st.write(rec.reason.why_good)
 
                 with col2:
-                    pass  # 右カラムは空
+                    st.write("**ソース:**")
+                    for source in rec.sources:
+                        st.markdown(f"- [{source.used_for}]({source.url})")
 
     elif job_results:
         error_msg = job_results.error or "求人検索に失敗しました"
