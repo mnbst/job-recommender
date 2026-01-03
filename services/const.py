@@ -8,6 +8,7 @@ import os
 SESSION_TTL_DAYS = 7
 SESSION_COOKIE_NAME = "job_recommender_session"
 MAX_COOKIE_RETRIES = 3
+COOKIE_RETRY_INTERVAL = 0.1  # 100ms
 
 # =============================================================================
 # Cache
