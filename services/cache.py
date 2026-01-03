@@ -227,6 +227,7 @@ class UserSettings:
     salary_range: str = "指定なし"
     work_style: list[str] = field(default_factory=list)
     job_type: list[str] = field(default_factory=list)
+    employment_type: list[str] = field(default_factory=list)
     other_preferences: str = ""
 
 
@@ -257,6 +258,7 @@ def get_user_settings(user_id: int) -> UserSettings:
             salary_range=data.get("salary_range", "指定なし"),
             work_style=data.get("work_style", []),
             job_type=data.get("job_type", []),
+            employment_type=data.get("employment_type", []),
             other_preferences=data.get("other_preferences", ""),
         )
     except Exception:
@@ -282,6 +284,7 @@ def save_user_settings(user_id: int, settings: UserSettings) -> None:
                 "salary_range": settings.salary_range,
                 "work_style": settings.work_style,
                 "job_type": settings.job_type,
+                "employment_type": settings.employment_type,
                 "other_preferences": settings.other_preferences,
                 "updated_at": datetime.now(UTC),
             }

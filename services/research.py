@@ -56,6 +56,7 @@ class JobPreferences:
     salary_range: str = "指定なし"
     work_style: list[str] | None = None
     job_type: list[str] | None = None
+    employment_type: list[str] | None = None
     other: str = ""
 
 
@@ -91,6 +92,8 @@ def build_search_prompt(profile: dict, preferences: JobPreferences) -> str:
         conditions.append(f"働き方: {', '.join(preferences.work_style)}")
     if preferences.job_type:
         conditions.append(f"希望職種: {', '.join(preferences.job_type)}")
+    if preferences.employment_type:
+        conditions.append(f"雇用形態: {', '.join(preferences.employment_type)}")
     if preferences.other:
         conditions.append(f"その他: {preferences.other}")
 
@@ -185,6 +188,7 @@ def search_jobs(
         "salary_range": preferences.salary_range,
         "work_style": preferences.work_style or [],
         "job_type": preferences.job_type or [],
+        "employment_type": preferences.employment_type or [],
         "other": preferences.other,
     }
 
@@ -301,3 +305,94 @@ def search_jobs(
             status="error",
             error=str(e),
         )
+
+
+@dataclass
+class JobUrlResult:
+    """求人URL検索結果."""
+
+    url: str | None
+    status: str
+    error: str | None = None
+
+
+def search_job_url(company: str, job_title: str, location: str = "") -> JobUrlResult:
+    """特定の求人の詳細ページURLを検索.
+
+    Args:
+        company: 会社名
+        job_title: 職種名
+        location: 勤務地（オプション）
+
+    Returns:
+        JobUrlResult with URL and status
+    """
+    api_key = os.getenv("PERPLEXITY_API_KEY")
+    if not api_key:
+        return JobUrlResult(
+            url=None,
+            status="error",
+            error="PERPLEXITY_API_KEY is required",
+        )
+
+    location_hint = f" in {location}" if location else ""
+    prompt = f"""Find the job posting URL for "{job_title}" at "{company}"{location_hint}.
+
+Search in this priority order:
+1. BEST: Specific job detail page with job ID (e.g., /jobs/12345)
+2. GOOD: Company's official recruitment page for this position
+3. OK: Job listing on recruitment sites (HRMOS, Talentio, HERP, Green, Wantedly, Findy, Lapras, Forkwell, Indeed, etc.)
+
+Return a JSON object:
+{{
+  "job_url": "https://example.com/jobs/12345"
+}}
+
+Priority examples (from best to acceptable):
+1. https://hrmos.co/pages/company/jobs/12345 (specific job ID - BEST)
+2. https://www.wantedly.com/projects/123456 (specific project - BEST)
+3. https://herp.careers/v1/company/abcdef (specific job - BEST)
+4. https://company.com/recruit/engineer (company's recruit page for engineers - GOOD)
+5. https://hrmos.co/pages/company/jobs (company's job list - OK)
+
+Do NOT return:
+- Google search results
+- General company homepage (without /recruit, /careers, /jobs path)
+
+If you cannot find any relevant URL, return {{"job_url": null}}
+"""
+
+    try:
+        client = Perplexity()
+
+        completion = client.chat.completions.create(
+            model="sonar",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "job_url": {"type": ["string", "null"]},
+                        },
+                        "required": ["job_url"],
+                    }
+                },
+            },
+        )
+
+        content = completion.choices[0].message.content
+        if not isinstance(content, str):
+            return JobUrlResult(url=None, status="error", error="Unexpected response")
+
+        result = json.loads(content)
+        job_url = result.get("job_url")
+
+        if job_url:
+            return JobUrlResult(url=job_url, status="success")
+        return JobUrlResult(url=None, status="not_found")
+
+    except Exception as e:
+        return JobUrlResult(url=None, status="error", error=str(e))

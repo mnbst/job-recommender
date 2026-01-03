@@ -94,6 +94,7 @@ with st.sidebar:
             st.session_state["salary_range"] = saved_settings.salary_range
             st.session_state["work_style"] = saved_settings.work_style
             st.session_state["job_type"] = saved_settings.job_type
+            st.session_state["employment_type"] = saved_settings.employment_type
             st.session_state["other_preferences"] = saved_settings.other_preferences
             st.session_state["settings_loaded"] = True
 
@@ -107,6 +108,7 @@ with st.sidebar:
                 salary_range=st.session_state.get("salary_range", "指定なし"),
                 work_style=st.session_state.get("work_style", []),
                 job_type=st.session_state.get("job_type", []),
+                employment_type=st.session_state.get("employment_type", []),
                 other_preferences=st.session_state.get("other_preferences", ""),
             )
             save_user_settings(user_id, settings)
@@ -161,6 +163,12 @@ with st.sidebar:
             key="job_type",
             on_change=save_settings,
         )
+        employment_type = st.multiselect(
+            "雇用形態",
+            options=["正社員", "フリーランス", "業務委託", "契約社員"],
+            key="employment_type",
+            on_change=save_settings,
+        )
         other_preferences = st.text_area(
             "その他の希望・アピール",
             placeholder="例: マネジメント経験3年、金融業界での開発経験、スタートアップ希望、自社サービス開発、英語環境など",
@@ -179,6 +187,7 @@ with st.sidebar:
         salary_range = "指定なし"
         work_style = []
         job_type = []
+        employment_type = []
         other_preferences = ""
         analyze_button = False
 
@@ -251,6 +260,7 @@ if should_analyze and github_username:
                 salary_range=salary_range,
                 work_style=work_style if work_style else None,
                 job_type=job_type if job_type else None,
+                employment_type=employment_type if employment_type else None,
                 other=other_preferences,
             )
             job_results = search_jobs(profile, preferences=preferences)
@@ -322,6 +332,46 @@ if "profile" in st.session_state and is_authenticated():
                     if rec.salary_range:
                         st.write("**給与:**", rec.salary_range)
 
+                    @st.fragment
+                    def fetch_job_url(
+                        company: str,
+                        job_title: str,
+                        location: str,
+                        key: str,
+                        fallback_url: str | None,
+                    ) -> None:
+                        """求人URLを取得するフラグメント."""
+                        from services.research import search_job_url
+
+                        cache_key = f"job_url_{key}"
+
+                        # キャッシュがあれば表示
+                        if cache_key in st.session_state:
+                            result = st.session_state[cache_key]
+                            if result["url"]:
+                                st.link_button("📋 求人ページ", result["url"])
+                            elif fallback_url:
+                                st.link_button("📄 参考ページ", fallback_url)
+                            else:
+                                st.caption("❌ 見つかりません")
+                            return
+
+                        # ボタンで検索実行
+                        if st.button("🔗 リンク取得", key=f"btn_{key}"):
+                            with st.spinner("検索中..."):
+                                result = search_job_url(company, job_title, location)
+                                st.session_state[cache_key] = {
+                                    "url": result.url,
+                                    "status": result.status,
+                                }
+                                st.rerun(scope="fragment")
+
+                    job_key = f"{rec.company}_{rec.job_title}".replace(" ", "_")
+                    fallback = rec.sources[0].url if rec.sources else None
+                    fetch_job_url(
+                        rec.company, rec.job_title, rec.location, job_key, fallback
+                    )
+
                     st.write("---")
                     st.write("**マッチ理由:**")
                     st.info(rec.reason.summary)
@@ -335,9 +385,7 @@ if "profile" in st.session_state and is_authenticated():
                         st.write(rec.reason.why_good)
 
                 with col2:
-                    st.write("**ソース:**")
-                    for source in rec.sources:
-                        st.markdown(f"- [{source.used_for}]({source.url})")
+                    pass  # 右カラムは空
 
     elif job_results:
         error_msg = job_results.error or "求人検索に失敗しました"
