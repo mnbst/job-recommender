@@ -1,22 +1,21 @@
 """Session persistence service using Firestore and Cookies."""
 
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import extra_streamlit_components as stx
-import streamlit as st
 from google.cloud.firestore_v1 import DocumentSnapshot
 
 from services.auth import GitHubUser
 from services.cache import get_firestore_client
 from services.const import (
+    COOKIE_RETRY_INTERVAL,
     MAX_COOKIE_RETRIES,
     SESSION_COOKIE_NAME,
     SESSION_TTL_DAYS,
 )
-
-COOKIE_RETRY_KEY = "_cookie_retry_count"
 
 
 def get_cookie_manager() -> stx.CookieManager:
@@ -28,7 +27,7 @@ def get_session_cookie(cookie_manager: stx.CookieManager) -> str | None:
     """Cookieからsession_idを取得（retry付き）.
 
     CookieManagerは非同期で動作するため、初回呼び出しでNoneが返る可能性あり。
-    st.rerun()で再実行してコンポーネントマウントを待つ。
+    ループでリトライしてコンポーネントマウントを待つ。
 
     Args:
         cookie_manager: CookieManagerインスタンス
@@ -36,23 +35,13 @@ def get_session_cookie(cookie_manager: stx.CookieManager) -> str | None:
     Returns:
         session_id または None（取得失敗 or 未設定）
     """
-    session_id = cookie_manager.get(cookie=SESSION_COOKIE_NAME)
-
-    if session_id is not None:
-        # 取得成功 → retry countをリセット
-        st.session_state.pop(COOKIE_RETRY_KEY, None)
-        return session_id
-
-    # Noneの場合、retryが必要か判定
-    retry_count = st.session_state.get(COOKIE_RETRY_KEY, 0)
-
-    if retry_count < MAX_COOKIE_RETRIES:
-        # retry回数をインクリメントしてrerun
-        st.session_state[COOKIE_RETRY_KEY] = retry_count + 1
-        st.rerun()
+    for _ in range(MAX_COOKIE_RETRIES):
+        session_id = cookie_manager.get(cookie=SESSION_COOKIE_NAME)
+        if session_id is not None:
+            return session_id
+        time.sleep(COOKIE_RETRY_INTERVAL)
 
     # retry上限到達 → Noneを返す（Cookieなしとして扱う）
-    st.session_state.pop(COOKIE_RETRY_KEY, None)
     return None
 
 
