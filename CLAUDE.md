@@ -19,7 +19,7 @@ CLAUDE.md・skills/*.md・agents/*.mdを更新する際は以下を守る：
 - **構造化**: 見出し・表で情報を整理。長文段落は分割
 
 ## Stack
-Python 3.11+ | Streamlit | Vertex AI (Gemini) | Perplexity AI (求人検索) | Terraform 1.6+ | GCP (Cloud Run + IAP + LB)
+Python 3.11+ | Streamlit | Vertex AI (Gemini) | Perplexity AI (求人検索) | Terraform 1.6+ | GCP (Cloud Run + LB)
 
 ## Structure
 ```
@@ -29,7 +29,7 @@ services/
   github.py      → GitHub API (PyGithub) - RepoInfo取得
   profile.py     → Vertex AI Gemini - プロファイル生成
   research.py    → Perplexity AI - 求人検索 + マッチング分析
-terraform/       → インフラ定義 (Cloud Run + LB + IAP)
+terraform/       → インフラ定義 (Cloud Run + LB)
 Dockerfile       → Python 3.11-slim + uv
 ```
 

@@ -19,18 +19,27 @@ gcloud compute ssl-certificates describe job-recommender-cert-nipio --global \
 ```
 - **対処**: ACTIVEになるまで待機。nip.ioドメインならDNS設定不要
 
-### 2. IAP認証失敗 (403)
-- **原因**: ユーザーがauthorized_membersにない
-- **確認**: terraform.tfvarsの`authorized_members`を確認
-- **対処**: Google Groupにユーザーを追加、terraform apply
+### 2. LB経由で403 Forbidden
+- **原因**: Cloud Runのinvoker権限がない
+- **確認**: 現在のIAM設定を確認
+```bash
+gcloud run services get-iam-policy job-recommender --region=asia-northeast1
+```
+- **対処**: 一般公開する場合は`allUsers`にinvoker権限を付与
+```bash
+gcloud run services add-iam-policy-binding job-recommender \
+  --region=asia-northeast1 \
+  --member="allUsers" \
+  --role="roles/run.invoker"
+```
 
 ### 3. Cloud Runにアクセスできない (502/503)
-- **原因**: IAP SAがrun.invokerを持っていない
-- **確認**: IAP SAがプロビジョニングされているか
+- **原因**: LBからCloud Runへの接続問題、NEG設定ミス
+- **確認**: Backend ServiceとNEGの設定
 ```bash
-gcloud beta services identity create --service=iap.googleapis.com --project=PROJECT_ID
+gcloud compute backend-services describe job-recommender-backend --global
 ```
-- **対処**: terraform applyで権限付与
+- **対処**: terraform applyで権限付与、または再デプロイ
 
 ### 4. Streamlitが起動しない
 - **原因**: ポート設定ミス、依存関係不足
