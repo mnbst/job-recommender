@@ -171,13 +171,13 @@ resource "google_cloud_run_v2_service" "app" {
 # ============================================
 # Cloud Run IAM
 # ============================================
-# LBからのアクセスを許可（Compute Engine default service account）
-resource "google_cloud_run_v2_service_iam_member" "lb_invoker" {
+# 一般公開（allUsers に invoker 権限）
+resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
   project  = var.project_id
   location = var.region
   name     = google_cloud_run_v2_service.app.name
   role     = "roles/run.invoker"
-  member   = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+  member   = "allUsers"
 }
 
 # ============================================
