@@ -44,6 +44,7 @@ GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検
 | [coding-standards](./.claude/skills/coding-standards/SKILL.md) | Python/Terraform コーディング規約 |
 | [project-architecture](./.claude/skills/project-architecture/SKILL.md) | データフロー・インフラ構成 |
 | [troubleshooting](./.claude/skills/troubleshooting/SKILL.md) | 障害対応・デバッグ |
+| [github-oauth](./.claude/skills/github-oauth/SKILL.md) | OAuth認証フロー・トークン仕様 |
 
 ## Agents（作業実行）
 | 作業 | エージェント |

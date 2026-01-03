@@ -171,14 +171,7 @@ resource "google_cloud_run_v2_service" "app" {
 # ============================================
 # Cloud Run IAM
 # ============================================
-resource "google_cloud_run_v2_service_iam_member" "iap_invoker" {
-  project  = var.project_id
-  location = var.region
-  name     = google_cloud_run_v2_service.app.name
-  role     = "roles/run.invoker"
-  member   = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-iap.iam.gserviceaccount.com"
-}
-
+# LBからのアクセスを許可（Compute Engine default service account）
 resource "google_cloud_run_v2_service_iam_member" "lb_invoker" {
   project  = var.project_id
   location = var.region

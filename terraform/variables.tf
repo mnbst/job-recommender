@@ -9,23 +9,6 @@ variable "region" {
   default     = "asia-northeast1"
 }
 
-variable "authorized_members" {
-  description = "List of members authorized to access via IAP (e.g., user:alice@example.com)"
-  type        = list(string)
-  default     = []
-}
-
-variable "iap_oauth2_client_id" {
-  description = "OAuth2 Client ID for IAP (create manually in GCP Console)"
-  type        = string
-}
-
-variable "iap_oauth2_client_secret" {
-  description = "OAuth2 Client Secret for IAP (create manually in GCP Console)"
-  type        = string
-  sensitive   = true
-}
-
 variable "domain_name" {
   description = "Custom domain name for the load balancer (optional, leave empty to use nip.io)"
   type        = string

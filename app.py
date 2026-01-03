@@ -13,6 +13,7 @@ from services.auth import (
     is_authenticated,
     render_login_button,
     render_user_info,
+    restore_session,
 )
 from services.cache import (
     UserSettings,
@@ -28,6 +29,7 @@ from services.cache import (
 from services.github import analyze_github_profile
 from services.profile import generate_profile
 from services.research import JobPreferences, search_jobs
+from services.session import get_cookie_manager
 
 # ログ設定（Cloud Run環境では構造化ログを使用）
 if os.environ.get("K_SERVICE"):
@@ -53,8 +55,14 @@ st.set_page_config(
     layout="wide",
 )
 
+# CookieManagerの取得（セッション永続化用）
+cookie_manager = get_cookie_manager()
+
+# セッション復元（Cookieから）
+restore_session(cookie_manager)
+
 # OAuthコールバック処理
-handle_oauth_callback()
+handle_oauth_callback(cookie_manager)
 
 # リダイレクトURI（本番環境ではCloud RunのURL）
 REDIRECT_URI = os.environ.get(
@@ -70,7 +78,7 @@ with st.sidebar:
     st.header("アカウント")
 
     if is_authenticated():
-        render_user_info()
+        render_user_info(cookie_manager)
         st.divider()
 
         # 認証済みユーザーのGitHubユーザー名を自動設定
