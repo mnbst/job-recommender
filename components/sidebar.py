@@ -20,8 +20,6 @@ def render_sidebar(cookie_manager, redirect_uri: str) -> None:
                 quota = get_quota_status(user.id)
 
                 st.write(f"**{user.login}**")
-                plan_label = "無料プラン" if quota.plan == "free" else "プレミアム"
-                st.caption(plan_label)
                 st.divider()
 
                 st.caption(f"プロファイル生成: 残り {quota.profile_credits} 回")

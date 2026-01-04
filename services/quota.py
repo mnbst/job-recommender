@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal
 
 import streamlit as st
 from google.cloud.firestore_v1 import DocumentSnapshot
@@ -11,7 +10,6 @@ from services.cache import get_firestore_client
 from services.const import (
     FREE_PLAN_INITIAL_PROFILE_CREDITS,
     FREE_PLAN_INITIAL_SEARCH_CREDITS,
-    FREE_PLAN_JOB_LIMIT,
 )
 from services.session_keys import QUOTA_STATUS
 
@@ -20,39 +18,10 @@ from services.session_keys import QUOTA_STATUS
 class QuotaStatus:
     """ユーザーのクォータ状態."""
 
-    plan: Literal["free", "premium"]
     profile_credits: int  # 残りプロファイル生成クレジット
     search_credits: int  # 残り求人検索クレジット
-    job_limit: int  # 求人表示上限
     can_generate_profile: bool
     can_search: bool
-
-
-def get_user_plan(user_id: int) -> Literal["free", "premium"]:
-    """ユーザーのプランを取得.
-
-    Args:
-        user_id: GitHubUser.id
-
-    Returns:
-        プラン名（"free" or "premium"）
-    """
-    try:
-        db = get_firestore_client()
-        doc_ref = db.collection("settings").document(str(user_id))
-        doc: DocumentSnapshot = doc_ref.get()  # type: ignore[assignment]
-
-        if not doc.exists:
-            return "free"
-
-        data = doc.to_dict()
-        if data is None:
-            return "free"
-
-        plan = data.get("plan", "free")
-        return "premium" if plan == "premium" else "free"
-    except Exception:
-        return "free"
 
 
 def _get_credits_data(user_id: int) -> dict | None:
@@ -95,20 +64,6 @@ def _init_credits(user_id: int) -> dict:
 
 def _fetch_quota_status(user_id: int) -> QuotaStatus:
     """Firestoreからクォータ状態を取得（内部用）."""
-    plan = get_user_plan(user_id)
-
-    # プレミアムプランは無制限
-    if plan == "premium":
-        return QuotaStatus(
-            plan="premium",
-            profile_credits=999,
-            search_credits=999,
-            job_limit=999,
-            can_generate_profile=True,
-            can_search=True,
-        )
-
-    # 無料プランの場合
     credits_data = _get_credits_data(user_id)
 
     if credits_data is None:
@@ -123,10 +78,8 @@ def _fetch_quota_status(user_id: int) -> QuotaStatus:
     )
 
     return QuotaStatus(
-        plan="free",
         profile_credits=profile_credits,
         search_credits=search_credits,
-        job_limit=FREE_PLAN_JOB_LIMIT,
         can_generate_profile=profile_credits > 0,
         can_search=search_credits > 0,
     )

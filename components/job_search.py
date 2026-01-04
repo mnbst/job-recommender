@@ -120,10 +120,9 @@ def job_search(
             use_container_width=True,
         )
     with search_col2:
-        if quota.plan == "free":
-            st.caption(f"残り {quota.search_credits} 回")
+        st.caption(f"残り {quota.search_credits} 回")
 
-    if search_disabled and quota.plan == "free":
+    if search_disabled:
         st.warning("求人検索クレジットがありません。")
 
     if search_button:
@@ -143,10 +142,10 @@ def job_search(
             st.session_state[JOB_RESULTS] = job_results
             st.rerun()
 
-    _display_job_results(quota.job_limit)
+    _display_job_results()
 
 
-def _display_job_results(job_limit: int) -> None:
+def _display_job_results() -> None:
     """求人結果を表示."""
     job_results: JobSearchResult | None = st.session_state.get(JOB_RESULTS)
 
@@ -155,12 +154,9 @@ def _display_job_results(job_limit: int) -> None:
 
     if job_results.status == "success" and job_results.recommendations:
         total = len(job_results.recommendations)
-        display_count = min(total, job_limit)
-        recommendations = job_results.recommendations[:job_limit]
+        st.success(f"{total}件の求人を表示")
 
-        st.success(f"{display_count}件の求人を表示")
-
-        for rec in recommendations:
+        for rec in job_results.recommendations:
             with st.expander(f"**{rec.job_title}** @ {rec.company}"):
                 st.write("**会社:**", rec.company)
                 st.write("**勤務地:**", rec.location)
@@ -183,11 +179,6 @@ def _display_job_results(job_limit: int) -> None:
                     st.write("**ソース:**")
                     for source in rec.sources:
                         st.markdown(f"- [{source.used_for}]({source.url})")
-
-        if total > job_limit:
-            st.info(
-                f"無料プランでは{job_limit}件まで表示。プレミアムで全{total}件表示できます。"
-            )
 
     elif job_results.error:
         st.warning(f"{job_results.error}")
