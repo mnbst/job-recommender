@@ -75,10 +75,9 @@ def profile_section(
                 _regenerate_profile(user_id, user_login, repo_limit)
 
         with regen_col2:
-            if quota.plan == "free":
-                st.caption(f"残り {quota.profile_credits} 回")
+            st.caption(f"残り {quota.profile_credits} 回")
 
-        if regen_disabled and quota.plan == "free":
+        if regen_disabled:
             st.warning("プロファイル生成クレジットがありません。")
 
         return cached_profile
@@ -98,10 +97,9 @@ def profile_section(
             _generate_profile(user_id, user_login, repo_limit)
 
     with gen_col2:
-        if quota.plan == "free":
-            st.caption(f"残り {quota.profile_credits} 回")
+        st.caption(f"残り {quota.profile_credits} 回")
 
-    if gen_disabled and quota.plan == "free":
+    if gen_disabled:
         st.warning("プロファイル生成クレジットがありません。")
 
     return None

@@ -7,20 +7,8 @@ from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 
-from components import (
-    job_search,
-    profile_section,
-    render_sidebar,
-    render_welcome,
-)
-from components.job_search import load_settings
-from services.auth import (
-    get_current_user,
-    handle_oauth_callback,
-    is_authenticated,
-    restore_session,
-)
-from services.quota import get_quota_status
+from components import render_sidebar
+from services.auth import handle_oauth_callback, restore_session
 from services.session import get_cookie_manager
 
 # ログ設定（Cloud Run環境では構造化ログを使用）
@@ -60,38 +48,18 @@ REDIRECT_URI = os.environ.get(
     "http://localhost:8501",
 )
 
-# デフォルトのリポジトリ数
-DEFAULT_REPO_LIMIT = 10
-
 # Sidebar
 render_sidebar(cookie_manager, REDIRECT_URI)
 
-# Main Content
-st.title("Job Recommender")
-st.caption("GitHubプロファイルから最適な求人をレコメンド")
+# Navigation
+pages = {
+    "メイン": [
+        st.Page("pages/home.py", title="ホーム", icon="🏠", default=True),
+    ],
+    "情報": [
+        st.Page("pages/plans.py", title="プラン・利用制限", icon="📋"),
+    ],
+}
 
-if is_authenticated():
-    user = get_current_user()
-    if not user:
-        st.error("ユーザー情報の取得に失敗しました")
-        st.stop()
-
-    user_id = user.id
-    quota = get_quota_status(user_id)
-
-    # 設定を読み込み
-    load_settings(user_id)
-
-    # プロファイルセクション
-    profile = profile_section(
-        user_id=user_id,
-        user_login=user.login,
-        quota=quota,
-        repo_limit=DEFAULT_REPO_LIMIT,
-    )
-
-    if profile:
-        st.divider()
-        job_search(user_id, profile, quota, DEFAULT_REPO_LIMIT)
-else:
-    render_welcome()
+pg = st.navigation(pages)
+pg.run()
