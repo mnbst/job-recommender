@@ -1,27 +1,23 @@
-"""Freemium quota management service（クレジット制）."""
+"""Freemium quota management service（共通クレジット制）."""
 
-from dataclasses import dataclass
 from datetime import UTC, datetime
 
 import streamlit as st
+from google.api_core.exceptions import AlreadyExists
+from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentSnapshot
+from pydantic import BaseModel
 
 from services.cache import get_firestore_client
-from services.const import (
-    FREE_PLAN_INITIAL_PROFILE_CREDITS,
-    FREE_PLAN_INITIAL_SEARCH_CREDITS,
-)
+from services.const import FREE_PLAN_INITIAL_CREDITS
 from services.session_keys import QUOTA_STATUS
 
 
-@dataclass
-class QuotaStatus:
+class QuotaStatus(BaseModel):
     """ユーザーのクォータ状態."""
 
-    profile_credits: int  # 残りプロファイル生成クレジット
-    search_credits: int  # 残り求人検索クレジット
-    can_generate_profile: bool
-    can_search: bool
+    credits: int  # 残りクレジット
+    can_use: bool  # クレジットが残っているか
 
 
 def _get_credits_data(user_id: int) -> dict | None:
@@ -40,26 +36,28 @@ def _get_credits_data(user_id: int) -> dict | None:
 
 
 def _init_credits(user_id: int) -> dict:
-    """クレジットを初期化."""
-    try:
-        db = get_firestore_client()
-        doc_ref = db.collection("credits").document(str(user_id))
-        now = datetime.now(UTC)
+    """クレジットを初期化（既存の場合はスキップ）."""
+    db = get_firestore_client()
+    doc_ref = db.collection("credits").document(str(user_id))
+    now = datetime.now(UTC)
 
-        data = {
-            "user_id": user_id,
-            "profile_credits": FREE_PLAN_INITIAL_PROFILE_CREDITS,
-            "search_credits": FREE_PLAN_INITIAL_SEARCH_CREDITS,
-            "created_at": now,
-            "updated_at": now,
-        }
-        doc_ref.set(data)
+    data = {
+        "user_id": user_id,
+        "credits": FREE_PLAN_INITIAL_CREDITS,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    try:
+        # create()は既存の場合AlreadyExistsを発生させる（競合回避）
+        doc_ref.create(data)
         return data
+    except AlreadyExists:
+        # 既に存在する場合は現在の値を返す
+        doc: DocumentSnapshot = doc_ref.get()  # type: ignore[assignment]
+        return doc.to_dict() or data
     except Exception:
-        return {
-            "profile_credits": FREE_PLAN_INITIAL_PROFILE_CREDITS,
-            "search_credits": FREE_PLAN_INITIAL_SEARCH_CREDITS,
-        }
+        return {"credits": FREE_PLAN_INITIAL_CREDITS}
 
 
 def _fetch_quota_status(user_id: int) -> QuotaStatus:
@@ -70,18 +68,11 @@ def _fetch_quota_status(user_id: int) -> QuotaStatus:
         # 初回アクセス → クレジット初期化
         credits_data = _init_credits(user_id)
 
-    profile_credits = credits_data.get(
-        "profile_credits", FREE_PLAN_INITIAL_PROFILE_CREDITS
-    )
-    search_credits = credits_data.get(
-        "search_credits", FREE_PLAN_INITIAL_SEARCH_CREDITS
-    )
+    credits = credits_data.get("credits", FREE_PLAN_INITIAL_CREDITS)
 
     return QuotaStatus(
-        profile_credits=profile_credits,
-        search_credits=search_credits,
-        can_generate_profile=profile_credits > 0,
-        can_search=search_credits > 0,
+        credits=credits,
+        can_use=credits > 0,
     )
 
 
@@ -109,8 +100,8 @@ def invalidate_quota_cache() -> None:
     st.session_state.pop(QUOTA_STATUS, None)
 
 
-def consume_profile_credit(user_id: int) -> bool:
-    """プロファイル生成クレジットを1消費.
+def consume_credit(user_id: int) -> bool:
+    """クレジットを1消費（トランザクションで競合回避）.
 
     Args:
         user_id: GitHubUser.id
@@ -121,39 +112,67 @@ def consume_profile_credit(user_id: int) -> bool:
     try:
         db = get_firestore_client()
         doc_ref = db.collection("credits").document(str(user_id))
-        doc: DocumentSnapshot = doc_ref.get()  # type: ignore[assignment]
         now = datetime.now(UTC)
 
-        if not doc.exists:
-            # 初期化してから消費
-            _init_credits(user_id)
-            doc = doc_ref.get()  # type: ignore[assignment]
+        @firestore.transactional
+        def consume_in_transaction(
+            transaction: firestore.Transaction,
+        ) -> int | None:
+            doc: DocumentSnapshot = doc_ref.get(transaction=transaction)  # type: ignore[assignment]
 
-        data = doc.to_dict()
-        if data is None:
+            if not doc.exists:
+                # トランザクション内で初期化
+                transaction.set(
+                    doc_ref,
+                    {
+                        "user_id": user_id,
+                        "credits": FREE_PLAN_INITIAL_CREDITS - 1,
+                        "created_at": now,
+                        "updated_at": now,
+                    },
+                )
+                return FREE_PLAN_INITIAL_CREDITS - 1
+
+            data = doc.to_dict()
+            if data is None:
+                return None
+
+            current_credits = data.get("credits", 0)
+            if current_credits <= 0:
+                return None
+
+            new_credits = current_credits - 1
+            transaction.update(
+                doc_ref,
+                {
+                    "credits": new_credits,
+                    "updated_at": now,
+                },
+            )
+            return new_credits
+
+        transaction = db.transaction()
+        new_credits = consume_in_transaction(transaction)
+
+        if new_credits is None:
             return False
 
-        current_credits = data.get("profile_credits", 0)
-        if current_credits <= 0:
-            return False
-
-        doc_ref.update(
-            {
-                "profile_credits": current_credits - 1,
-                "updated_at": now,
-            }
+        # キャッシュを新しい値で即座に更新
+        st.session_state[QUOTA_STATUS] = QuotaStatus(
+            credits=new_credits,
+            can_use=new_credits > 0,
         )
-        invalidate_quota_cache()
         return True
     except Exception:
         return False
 
 
-def consume_search_credit(user_id: int) -> bool:
-    """求人検索クレジットを1消費.
+def add_credits(user_id: int, amount: int) -> bool:
+    """クレジットを追加（トランザクションで競合回避）.
 
     Args:
         user_id: GitHubUser.id
+        amount: 追加するクレジット数
 
     Returns:
         成功した場合True
@@ -161,74 +180,54 @@ def consume_search_credit(user_id: int) -> bool:
     try:
         db = get_firestore_client()
         doc_ref = db.collection("credits").document(str(user_id))
-        doc: DocumentSnapshot = doc_ref.get()  # type: ignore[assignment]
         now = datetime.now(UTC)
 
-        if not doc.exists:
-            # 初期化してから消費
-            _init_credits(user_id)
-            doc = doc_ref.get()  # type: ignore[assignment]
+        @firestore.transactional
+        def add_in_transaction(
+            transaction: firestore.Transaction,
+        ) -> int | None:
+            doc: DocumentSnapshot = doc_ref.get(transaction=transaction)  # type: ignore[assignment]
 
-        data = doc.to_dict()
-        if data is None:
+            if not doc.exists:
+                # トランザクション内で初期化 + 追加
+                new_credits = FREE_PLAN_INITIAL_CREDITS + amount
+                transaction.set(
+                    doc_ref,
+                    {
+                        "user_id": user_id,
+                        "credits": new_credits,
+                        "created_at": now,
+                        "updated_at": now,
+                    },
+                )
+                return new_credits
+
+            data = doc.to_dict()
+            if data is None:
+                return None
+
+            current_credits = data.get("credits", 0)
+            new_credits = current_credits + amount
+            transaction.update(
+                doc_ref,
+                {
+                    "credits": new_credits,
+                    "updated_at": now,
+                },
+            )
+            return new_credits
+
+        transaction = db.transaction()
+        new_credits = add_in_transaction(transaction)
+
+        if new_credits is None:
             return False
 
-        current_credits = data.get("search_credits", 0)
-        if current_credits <= 0:
-            return False
-
-        doc_ref.update(
-            {
-                "search_credits": current_credits - 1,
-                "updated_at": now,
-            }
+        # キャッシュを新しい値で即座に更新
+        st.session_state[QUOTA_STATUS] = QuotaStatus(
+            credits=new_credits,
+            can_use=new_credits > 0,
         )
-        invalidate_quota_cache()
-        return True
-    except Exception:
-        return False
-
-
-def add_credits(
-    user_id: int,
-    profile_credits: int = 0,
-    search_credits: int = 0,
-) -> bool:
-    """クレジットを追加（課金時などに使用）.
-
-    Args:
-        user_id: GitHubUser.id
-        profile_credits: 追加するプロファイルクレジット
-        search_credits: 追加する検索クレジット
-
-    Returns:
-        成功した場合True
-    """
-    try:
-        db = get_firestore_client()
-        doc_ref = db.collection("credits").document(str(user_id))
-        doc: DocumentSnapshot = doc_ref.get()  # type: ignore[assignment]
-        now = datetime.now(UTC)
-
-        if not doc.exists:
-            _init_credits(user_id)
-            doc = doc_ref.get()  # type: ignore[assignment]
-
-        data = doc.to_dict()
-        if data is None:
-            return False
-
-        current_profile = data.get("profile_credits", 0)
-        current_search = data.get("search_credits", 0)
-
-        doc_ref.update(
-            {
-                "profile_credits": current_profile + profile_credits,
-                "search_credits": current_search + search_credits,
-                "updated_at": now,
-            }
-        )
-        invalidate_quota_cache()
         return True
     except Exception:
         return False

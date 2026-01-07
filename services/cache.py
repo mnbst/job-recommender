@@ -1,13 +1,13 @@
 """Firestore cache service for developer profiles and repositories."""
 
 import os
-from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import streamlit as st
 from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentSnapshot
+from pydantic import BaseModel, Field
 
 from services.const import CACHE_TTL_DAYS
 from services.github import FileContent, RepoInfo
@@ -192,7 +192,7 @@ def save_repos_cache(
         doc_ref.set(
             {
                 "user_id": user_id,
-                "repos": [asdict(r) for r in repos],
+                "repos": [r.model_dump() for r in repos],
                 "repo_count": len(repos),
                 "updated_at": now,
             }
@@ -240,16 +240,15 @@ def _dict_to_repo_info(data: dict[str, Any]) -> RepoInfo:
 # ============================================
 # User Settings Cache
 # ============================================
-@dataclass
-class UserSettings:
+class UserSettings(BaseModel):
     """ユーザー設定."""
 
     repo_limit: int = 10
     job_location: str = "東京"
     salary_range: str = "指定なし"
-    work_style: list[str] = field(default_factory=list)
-    job_type: list[str] = field(default_factory=list)
-    employment_type: list[str] = field(default_factory=list)
+    work_style: list[str] = Field(default_factory=list)
+    job_type: list[str] = Field(default_factory=list)
+    employment_type: list[str] = Field(default_factory=list)
     other_preferences: str = ""
     plan: str = "free"  # "free" | "premium"
 

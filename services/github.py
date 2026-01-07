@@ -1,11 +1,11 @@
 """GitHub API integration for repository analysis."""
 
 import os
-from dataclasses import dataclass, field
 
 from github import Github
 from github.ContentFile import ContentFile
 from github.Repository import Repository
+from pydantic import BaseModel, Field
 
 # 依存ファイルのパターン
 DEPENDENCY_FILES = [
@@ -51,16 +51,14 @@ CONFIG_FILES = [
 ]
 
 
-@dataclass
-class FileContent:
+class FileContent(BaseModel):
     """File content from repository."""
 
     path: str
     content: str
 
 
-@dataclass
-class RepoInfo:
+class RepoInfo(BaseModel):
     """Repository information extracted from GitHub."""
 
     name: str
@@ -73,10 +71,10 @@ class RepoInfo:
     forks: int
     updated_at: str
     is_fork: bool = False
-    file_structure: list[str] = field(default_factory=list)
-    dependency_files: list[FileContent] = field(default_factory=list)
-    main_files: list[FileContent] = field(default_factory=list)
-    config_files: list[str] = field(default_factory=list)
+    file_structure: list[str] = Field(default_factory=list)
+    dependency_files: list[FileContent] = Field(default_factory=list)
+    main_files: list[FileContent] = Field(default_factory=list)
+    config_files: list[str] = Field(default_factory=list)
 
 
 def get_github_client() -> Github:

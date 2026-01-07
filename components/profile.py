@@ -11,7 +11,7 @@ from services.cache import (
 )
 from services.github import analyze_github_profile
 from services.profile import generate_profile
-from services.quota import QuotaStatus, consume_profile_credit
+from services.quota import QuotaStatus, consume_credit
 from services.session_keys import JOB_RESULTS
 
 
@@ -66,7 +66,7 @@ def profile_section(
 
         regen_col1, regen_col2 = st.columns([3, 1])
         with regen_col1:
-            regen_disabled = not quota.can_generate_profile
+            regen_disabled = not quota.can_use
             if st.button(
                 "プロファイル再生成",
                 disabled=regen_disabled,
@@ -75,10 +75,10 @@ def profile_section(
                 _regenerate_profile(user_id, user_login, repo_limit)
 
         with regen_col2:
-            st.caption(f"残り {quota.profile_credits} 回")
+            st.caption(f"残り {quota.credits} クレジット")
 
         if regen_disabled:
-            st.warning("プロファイル生成クレジットがありません。")
+            st.warning("クレジットがありません。")
 
         return cached_profile
 
@@ -87,7 +87,7 @@ def profile_section(
 
     gen_col1, gen_col2 = st.columns([1, 3])
     with gen_col1:
-        gen_disabled = not quota.can_generate_profile
+        gen_disabled = not quota.can_use
         if st.button(
             "プロファイルを生成",
             type="primary",
@@ -97,17 +97,17 @@ def profile_section(
             _generate_profile(user_id, user_login, repo_limit)
 
     with gen_col2:
-        st.caption(f"残り {quota.profile_credits} 回")
+        st.caption(f"残り {quota.credits} クレジット")
 
     if gen_disabled:
-        st.warning("プロファイル生成クレジットがありません。")
+        st.warning("クレジットがありません。")
 
     return None
 
 
 def _regenerate_profile(user_id: int, user_login: str, repo_limit: int) -> None:
     """プロファイルを再生成."""
-    consume_profile_credit(user_id)
+    consume_credit(user_id)
     invalidate_repos_cache(user_id)
     invalidate_profile_cache(user_id)
     st.session_state.pop("profile", None)
@@ -125,21 +125,19 @@ def _regenerate_profile(user_id: int, user_login: str, repo_limit: int) -> None:
                 repo_count=len(repos),
             )
             st.session_state["profile"] = profile
-            st.rerun()
         else:
             st.error("リポジトリが見つかりませんでした")
+        st.rerun()
 
 
 def _generate_profile(user_id: int, user_login: str, repo_limit: int) -> None:
     """プロファイルを新規生成."""
-    consume_profile_credit(user_id)
+    consume_credit(user_id)
 
     with st.spinner("GitHubプロファイルを分析中..."):
         repos = analyze_github_profile(user_login, repo_limit)
         if repos:
             save_repos_cache(user_id, repos)
-            st.success(f"{len(repos)}個のリポジトリを取得しました")
-
             profile = generate_profile(repos)
             save_profile_cache(
                 user_id=user_id,
@@ -148,6 +146,6 @@ def _generate_profile(user_id: int, user_login: str, repo_limit: int) -> None:
                 repo_count=len(repos),
             )
             st.session_state["profile"] = profile
-            st.rerun()
         else:
             st.error("リポジトリが見つかりませんでした")
+        st.rerun()

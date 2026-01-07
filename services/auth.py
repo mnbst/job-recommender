@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
 import httpx
 import streamlit as st
+from pydantic import BaseModel
 
 from services.const import GITHUB_AUTHORIZE_URL, GITHUB_TOKEN_URL, GITHUB_USER_URL
 
@@ -16,8 +16,7 @@ if TYPE_CHECKING:
     import extra_streamlit_components as stx
 
 
-@dataclass
-class GitHubUser:
+class GitHubUser(BaseModel):
     """GitHubユーザー情報."""
 
     id: int
