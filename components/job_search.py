@@ -3,9 +3,9 @@
 import streamlit as st
 
 from services.cache import UserSettings, get_user_settings, save_user_settings
-from services.quota import QuotaStatus, consume_search_credit
+from services.quota import QuotaStatus, consume_credit, get_quota_status
 from services.research import JobPreferences, JobSearchResult, search_jobs
-from services.session_keys import JOB_RESULTS
+from services.session_keys import JOB_PREFERENCES, JOB_RESULTS
 
 
 def _save_settings(user_id: int, repo_limit: int) -> None:
@@ -112,7 +112,7 @@ def job_search(
     search_conditions()
     search_col1, search_col2 = st.columns([1, 3])
     with search_col1:
-        search_disabled = not quota.can_search
+        search_disabled = not quota.can_use
         search_button = st.button(
             "求人を検索",
             disabled=search_disabled,
@@ -120,14 +120,14 @@ def job_search(
             use_container_width=True,
         )
     with search_col2:
-        st.caption(f"残り {quota.search_credits} 回")
+        st.caption(f"残り {quota.credits} クレジット")
 
     if search_disabled:
-        st.warning("求人検索クレジットがありません。")
+        st.warning("クレジットがありません。")
 
     if search_button:
         _save_settings(user_id, repo_limit)
-        consume_search_credit(user_id)
+        consume_credit(user_id)
 
         with st.spinner("求人を検索中..."):
             preferences = JobPreferences(
@@ -138,14 +138,16 @@ def job_search(
                 employment_type=st.session_state.get("employment_type") or None,
                 other=st.session_state.get("other_preferences", ""),
             )
+            # 検索条件を保存（追加検索用）
+            st.session_state[JOB_PREFERENCES] = preferences
             job_results = search_jobs(profile, preferences=preferences)
             st.session_state[JOB_RESULTS] = job_results
             st.rerun()
 
-    _display_job_results()
+    _display_job_results(user_id, profile)
 
 
-def _display_job_results() -> None:
+def _display_job_results(user_id: int, profile: dict) -> None:
     """求人結果を表示."""
     job_results: JobSearchResult | None = st.session_state.get(JOB_RESULTS)
 
@@ -180,5 +182,60 @@ def _display_job_results() -> None:
                     for source in rec.sources:
                         st.markdown(f"- [{source.used_for}]({source.url})")
 
+        # 「もっと見る」ボタン
+        _show_more_button(user_id, profile)
+
     elif job_results.error:
         st.warning(f"{job_results.error}")
+
+
+def _show_more_button(user_id: int, profile: dict) -> None:
+    """追加検索ボタンを表示."""
+    quota = get_quota_status(user_id)
+    job_results: JobSearchResult | None = st.session_state.get(JOB_RESULTS)
+
+    if not job_results or not job_results.recommendations:
+        return
+
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        more_disabled = not quota.can_use
+        more_button = st.button(
+            "もっと見る (最大3件)",
+            disabled=more_disabled,
+            use_container_width=True,
+        )
+    with col2:
+        st.caption(f"1クレジット消費 (残り {quota.credits})")
+
+    if more_button:
+        consume_credit(user_id)
+
+        # 既存の企業名を取得して除外
+        exclude_companies = [rec.company for rec in job_results.recommendations]
+
+        # 保存された検索条件を取得
+        preferences: JobPreferences | None = st.session_state.get(JOB_PREFERENCES)
+        if preferences is None:
+            preferences = JobPreferences()
+
+        with st.spinner("追加の求人を検索中..."):
+            new_results = search_jobs(
+                profile,
+                preferences=preferences,
+                exclude_companies=exclude_companies,
+            )
+
+            if new_results.status == "success" and new_results.recommendations:
+                combined_recommendations = (
+                    job_results.recommendations + new_results.recommendations
+                )
+                st.session_state[JOB_RESULTS] = JobSearchResult(
+                    recommendations=combined_recommendations,
+                    status="success",
+                )
+            elif new_results.error:
+                st.warning(f"追加検索エラー: {new_results.error}")
+            else:
+                st.info("これ以上の求人が見つかりませんでした")
+            st.rerun()

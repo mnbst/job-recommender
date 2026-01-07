@@ -25,6 +25,5 @@ GITHUB_USER_URL = "https://api.github.com/user"
 # =============================================================================
 # Freemium（クレジット制）
 # =============================================================================
-FREE_PLAN_JOB_LIMIT = 3  # 無料プランの求人表示上限
-FREE_PLAN_INITIAL_PROFILE_CREDITS = 3  # 初期プロファイル生成クレジット
-FREE_PLAN_INITIAL_SEARCH_CREDITS = 3  # 初期求人検索クレジット
+FREE_PLAN_INITIAL_CREDITS = 5  # 初期クレジット（共通）
+FREE_PLAN_JOB_LIMIT = 3  # 1回の検索で表示する求人数

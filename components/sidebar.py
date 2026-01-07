@@ -22,8 +22,7 @@ def render_sidebar(cookie_manager, redirect_uri: str) -> None:
                 st.write(f"**{user.login}**")
                 st.divider()
 
-                st.caption(f"プロファイル生成: 残り {quota.profile_credits} 回")
-                st.caption(f"求人検索: 残り {quota.search_credits} 回")
+                st.caption(f"残り {quota.credits} クレジット")
                 st.divider()
 
                 if st.button("ログアウト", use_container_width=True):
