@@ -94,7 +94,7 @@ def build_search_prompt(
     if preferences.employment_type:
         conditions.append(f"雇用形態: {', '.join(preferences.employment_type)}")
     if preferences.other:
-        conditions.append(f"その他: {preferences.other}")
+        conditions.append(f"その他の希望・アピールポイント: {preferences.other}")
 
     conditions_text = "\n- ".join(conditions)
     keywords_text = ", ".join(keywords) if keywords else ""
