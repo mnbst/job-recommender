@@ -89,21 +89,27 @@
 
 ## Phase 4: インフラ改善（後回し）
 
-- [ ] 一般公開対応（IAP削除）
-  - load_balancer.tf: `iap` ブロック削除
-  - load_balancer.tf: `google_iap_web_backend_service_iam_binding` 削除
-  - main.tf: `iap_invoker` IAM バインディング削除
-  - variables.tf: `iap_oauth2_client_id`, `iap_oauth2_client_secret`, `authorized_members` 削除
-  - terraform.tfvars: IAP設定行削除
-  - main.tf: `allUsers` に `roles/run.invoker` 付与（LB経由のみ許可）
-  - CLAUDE.md 更新
+### ネットワークセキュリティ
+- [ ] Cloud Armor 導入（優先度高）
+  - WAF（SQLi/XSS防御）- OWASP Top 10 対策
+  - レート制限（API乱用・ブルートフォース対策）
+  - `google_compute_security_policy` → Backend Service に適用
+- [ ] IPアクセス制限（必要に応じて）
+  - 特定国/IPレンジのみ許可
+- [ ] Bot対策
+  - reCAPTCHA Enterprise 統合（Cloud Armor経由）
+- [ ] VPC Service Controls（コスト増・複雑化とのトレードオフ）
+  - Private Google Access で Vertex AI への内部通信化
+
+### その他インフラ
+- [x] 一般公開対応（IAP削除）
+- [x] terraform.tfvars の機密情報保護（.gitignoreに追加済み）
 - [ ] カスタムドメイン取得・設定
   - ドメイン取得（Google Domains / Cloudflare など）
   - Cloud DNS ゾーン作成
   - SSL証明書（Google-managed）設定
   - Load Balancer にドメイン紐付け
   - GitHub OAuth App の callback URL 更新
-- [ ] terraform.tfvars の機密情報保護
 - [ ] アラート設定（monitoring.tf）
 - [ ] Blue-Green デプロイ対応
 - [ ] 構造化ログ実装

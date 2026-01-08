@@ -103,8 +103,8 @@ def job_search(
                     key="employment_type",
                 )
                 st.text_area(
-                    "その他の希望",
-                    placeholder="例: スタートアップ希望、自社サービス開発など",
+                    "その他の希望またはアピールポイント",
+                    placeholder="例: スタートアップ希望、自社サービス開発、マネジメント経験ありなど",
                     height=100,
                     key="other_preferences",
                 )
