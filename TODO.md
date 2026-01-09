@@ -12,23 +12,22 @@
   - 有効期限1日、Secret Manager に JWT_SECRET 追加済み
 
 ### Step 2: フリーミアム機能制限
-- [ ] 無料プラン制限実装
-  - 求人表示: 3件まで
-  - 分析回数: 1日3回まで
-- [ ] 有料プラン機能
-  - 無制限求人表示
-  - 詳細スキル分析
-  - 履歴書自動生成
+- [x] 共通クレジット制に統合
+  - 初回: 5クレジット
+  - 補充: なし
+- [x] クレジット消費ポイント
+  - プロファイル生成: 1クレジット
+  - 求人検索（初回3件）: 1クレジット
+  - 求人追加表示（+3件）: 1クレジット
 
 ### Step 3: 決済基盤（Stripe）
 - [ ] Stripe アカウント作成・設定
 - [ ] Checkout Session 実装
 - [ ] Webhook で支払い確認
-- [ ] クレジット購入（回数制）
-  - 5回パック: ¥500（¥100/回）
-  - 15回パック: ¥1,200（¥80/回）
-  - 30回パック: ¥2,000（¥67/回）
-- [ ] ヘビーユーザー向け月額プラン: ¥980/月（無制限）
+- [ ] 有料パック実装
+  - スターター: ¥500 / 5回（¥100/回）
+  - スタンダード: ¥1,200 / 15回（¥80/回）
+  - プレミアム: ¥1,800 / 30回（¥60/回）
 
 ### Step 4: アフィリエイト（並行検討）
 - [ ] アフィリエイト提携先調査
@@ -50,6 +49,9 @@
 - [ ] 詳細スキル分析レポート（PDF出力）
 - [ ] 職務経歴書の自動生成
 - [ ] 面接対策アドバイス
+
+### リポジトリ絞り込み
+- [ ] 分析対象リポジトリの選択機能
 
 ### プロファイル生成改善
 - [ ] モデル変更検討（gemini-2.5-flash → claude-opus-4 or claude-sonnet-4）
@@ -87,21 +89,27 @@
 
 ## Phase 4: インフラ改善（後回し）
 
-- [ ] 一般公開対応（IAP削除）
-  - load_balancer.tf: `iap` ブロック削除
-  - load_balancer.tf: `google_iap_web_backend_service_iam_binding` 削除
-  - main.tf: `iap_invoker` IAM バインディング削除
-  - variables.tf: `iap_oauth2_client_id`, `iap_oauth2_client_secret`, `authorized_members` 削除
-  - terraform.tfvars: IAP設定行削除
-  - main.tf: `allUsers` に `roles/run.invoker` 付与（LB経由のみ許可）
-  - CLAUDE.md 更新
+### ネットワークセキュリティ
+- [ ] Cloud Armor 導入（優先度高）
+  - WAF（SQLi/XSS防御）- OWASP Top 10 対策
+  - レート制限（API乱用・ブルートフォース対策）
+  - `google_compute_security_policy` → Backend Service に適用
+- [ ] IPアクセス制限（必要に応じて）
+  - 特定国/IPレンジのみ許可
+- [ ] Bot対策
+  - reCAPTCHA Enterprise 統合（Cloud Armor経由）
+- [ ] VPC Service Controls（コスト増・複雑化とのトレードオフ）
+  - Private Google Access で Vertex AI への内部通信化
+
+### その他インフラ
+- [x] 一般公開対応（IAP削除）
+- [x] terraform.tfvars の機密情報保護（.gitignoreに追加済み）
 - [ ] カスタムドメイン取得・設定
   - ドメイン取得（Google Domains / Cloudflare など）
   - Cloud DNS ゾーン作成
   - SSL証明書（Google-managed）設定
   - Load Balancer にドメイン紐付け
   - GitHub OAuth App の callback URL 更新
-- [ ] terraform.tfvars の機密情報保護
 - [ ] アラート設定（monitoring.tf）
 - [ ] Blue-Green デプロイ対応
 - [ ] 構造化ログ実装
