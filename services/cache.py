@@ -1,15 +1,17 @@
 """Firestore cache service for developer profiles and repositories."""
 
 import os
-from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import streamlit as st
 from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentSnapshot
+from pydantic import BaseModel, Field
 
 from services.const import CACHE_TTL_DAYS
 from services.github import FileContent, RepoInfo
+from services.session_keys import PROFILE, USER_SETTINGS
 
 
 def get_firestore_client() -> firestore.Client:
@@ -18,16 +20,8 @@ def get_firestore_client() -> firestore.Client:
     return firestore.Client(project=project_id, database="(default)")
 
 
-def get_cached_profile(user_id: int, repo_count: int) -> dict[str, Any] | None:
-    """キャッシュされたプロファイルを取得.
-
-    Args:
-        user_id: GitHubUser.id
-        repo_count: 分析するリポジトリ数
-
-    Returns:
-        キャッシュが有効ならprofile_data、それ以外はNone
-    """
+def _fetch_cached_profile(user_id: int, repo_count: int) -> dict[str, Any] | None:
+    """Firestoreからキャッシュされたプロファイルを取得（内部用）."""
     try:
         db = get_firestore_client()
         doc_ref = db.collection("profiles").document(str(user_id))
@@ -41,7 +35,8 @@ def get_cached_profile(user_id: int, repo_count: int) -> dict[str, Any] | None:
             return None
 
         # リポジトリ数が異なる場合はキャッシュ無効
-        if data.get("repo_count") != repo_count:
+        repo_count_cached = data.get("repo_count")
+        if repo_count_cached and repo_count_cached > repo_count:
             return None
 
         # TTLチェック
@@ -53,8 +48,33 @@ def get_cached_profile(user_id: int, repo_count: int) -> dict[str, Any] | None:
 
         return data.get("profile_data")
     except Exception:
-        # キャッシュ読み取り失敗時はNoneを返してVertex AIで再生成
         return None
+
+
+def get_cached_profile(user_id: int, repo_count: int) -> dict[str, Any] | None:
+    """キャッシュされたプロファイルを取得（session_stateキャッシュ付き）.
+
+    Args:
+        user_id: GitHubUser.id
+        repo_count: 分析するリポジトリ数
+
+    Returns:
+        キャッシュが有効ならprofile_data、それ以外はNone
+    """
+    # session_stateにキャッシュがあれば返す
+    if PROFILE in st.session_state:
+        return st.session_state[PROFILE]
+
+    # Firestoreから取得してキャッシュ
+    profile = _fetch_cached_profile(user_id, repo_count)
+    if profile is not None:
+        st.session_state[PROFILE] = profile
+    return profile
+
+
+def invalidate_profile_session_cache() -> None:
+    """プロファイルのsession_stateキャッシュを無効化."""
+    st.session_state.pop(PROFILE, None)
 
 
 def save_profile_cache(
@@ -95,8 +115,9 @@ def save_profile_cache(
                 "version": 1,
             }
         )
+        # session_stateキャッシュを更新
+        st.session_state[PROFILE] = profile_data
     except Exception:
-        # キャッシュ保存失敗は無視（サービス継続優先）
         pass
 
 
@@ -106,6 +127,7 @@ def invalidate_profile_cache(user_id: int) -> None:
         db = get_firestore_client()
         doc_ref = db.collection("profiles").document(str(user_id))
         doc_ref.delete()
+        invalidate_profile_session_cache()
     except Exception:
         pass
 
@@ -170,7 +192,7 @@ def save_repos_cache(
         doc_ref.set(
             {
                 "user_id": user_id,
-                "repos": [asdict(r) for r in repos],
+                "repos": [r.model_dump() for r in repos],
                 "repo_count": len(repos),
                 "updated_at": now,
             }
@@ -218,28 +240,21 @@ def _dict_to_repo_info(data: dict[str, Any]) -> RepoInfo:
 # ============================================
 # User Settings Cache
 # ============================================
-@dataclass
-class UserSettings:
+class UserSettings(BaseModel):
     """ユーザー設定."""
 
     repo_limit: int = 10
     job_location: str = "東京"
     salary_range: str = "指定なし"
-    work_style: list[str] = field(default_factory=list)
-    job_type: list[str] = field(default_factory=list)
-    employment_type: list[str] = field(default_factory=list)
+    work_style: list[str] = Field(default_factory=list)
+    job_type: list[str] = Field(default_factory=list)
+    employment_type: list[str] = Field(default_factory=list)
     other_preferences: str = ""
+    plan: str = "free"  # "free" | "premium"
 
 
-def get_user_settings(user_id: int) -> UserSettings:
-    """ユーザー設定を取得.
-
-    Args:
-        user_id: GitHubUser.id
-
-    Returns:
-        UserSettings（存在しない場合はデフォルト値）
-    """
+def _fetch_user_settings(user_id: int) -> UserSettings:
+    """Firestoreからユーザー設定を取得（内部用）."""
     try:
         db = get_firestore_client()
         doc_ref = db.collection("settings").document(str(user_id))
@@ -260,9 +275,34 @@ def get_user_settings(user_id: int) -> UserSettings:
             job_type=data.get("job_type", []),
             employment_type=data.get("employment_type", []),
             other_preferences=data.get("other_preferences", ""),
+            plan=data.get("plan", "free"),
         )
     except Exception:
         return UserSettings()
+
+
+def get_user_settings(user_id: int) -> UserSettings:
+    """ユーザー設定を取得（session_stateキャッシュ付き）.
+
+    Args:
+        user_id: GitHubUser.id
+
+    Returns:
+        UserSettings（存在しない場合はデフォルト値）
+    """
+    # session_stateにキャッシュがあれば返す
+    if USER_SETTINGS in st.session_state:
+        return st.session_state[USER_SETTINGS]
+
+    # Firestoreから取得してキャッシュ
+    settings = _fetch_user_settings(user_id)
+    st.session_state[USER_SETTINGS] = settings
+    return settings
+
+
+def invalidate_settings_session_cache() -> None:
+    """ユーザー設定のsession_stateキャッシュを無効化."""
+    st.session_state.pop(USER_SETTINGS, None)
 
 
 def save_user_settings(user_id: int, settings: UserSettings) -> None:
@@ -286,8 +326,11 @@ def save_user_settings(user_id: int, settings: UserSettings) -> None:
                 "job_type": settings.job_type,
                 "employment_type": settings.employment_type,
                 "other_preferences": settings.other_preferences,
+                "plan": settings.plan,
                 "updated_at": datetime.now(UTC),
             }
         )
+        # session_stateキャッシュを更新
+        st.session_state[USER_SETTINGS] = settings
     except Exception:
         pass
