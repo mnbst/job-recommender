@@ -7,39 +7,17 @@ from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 
-from services.auth import (
-    get_current_user,
-    handle_oauth_callback,
-    is_authenticated,
-    render_login_button,
-    render_user_info,
-    restore_session,
-)
-from services.cache import (
-    UserSettings,
-    get_cached_profile,
-    get_cached_repos,
-    get_user_settings,
-    invalidate_profile_cache,
-    invalidate_repos_cache,
-    save_profile_cache,
-    save_repos_cache,
-    save_user_settings,
-)
-from services.github import analyze_github_profile
-from services.profile import generate_profile
-from services.research import JobPreferences, search_jobs
+from components import render_sidebar
+from services.auth import handle_oauth_callback, restore_session
 from services.session import get_cookie_manager
 
 # ログ設定（Cloud Run環境では構造化ログを使用）
 if os.environ.get("K_SERVICE"):
-    # Cloud Run環境
     import google.cloud.logging
 
     client = google.cloud.logging.Client()
     client.setup_logging()
 else:
-    # ローカル環境
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -70,17 +48,20 @@ REDIRECT_URI = os.environ.get(
     "http://localhost:8501",
 )
 
-st.title("💼 Job Recommender")
-st.subheader("GitHubプロファイルから最適な求人をレコメンド")
-
 # Sidebar
-with st.sidebar:
-    st.header("アカウント")
+render_sidebar(cookie_manager, REDIRECT_URI)
 
-    if is_authenticated():
-        render_user_info(cookie_manager)
-        st.divider()
+# Navigation
+pages = {
+    "メイン": [
+        st.Page("pages/home.py", title="ホーム", icon="🏠", default=True),
+    ],
+    "情報": [
+        st.Page("pages/plans.py", title="プラン・利用制限", icon="📋"),
+    ],
+}
 
+<<<<<<< HEAD
         # 認証済みユーザーのGitHubユーザー名を自動設定
         user = get_current_user()
         github_username = user.login if user else ""
@@ -405,3 +386,7 @@ else:
 
         👈 **サイドバーからGitHubでログインして始めましょう！**
         """)
+=======
+pg = st.navigation(pages)
+pg.run()
+>>>>>>> 0787b45f28cef55c1f411379e9e87a41c48c7b21
