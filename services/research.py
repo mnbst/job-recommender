@@ -3,23 +3,21 @@
 import json
 import logging
 import os
-from dataclasses import dataclass
 
 from perplexity import Perplexity
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class JobSource:
+class JobSource(BaseModel):
     """Source URL for job information."""
 
     url: str
     used_for: str
 
 
-@dataclass
-class MatchReason:
+class MatchReason(BaseModel):
     """Explanation for why a job is a good match."""
 
     summary: str
@@ -27,8 +25,7 @@ class MatchReason:
     why_good: str
 
 
-@dataclass
-class JobRecommendation:
+class JobRecommendation(BaseModel):
     """Job recommendation from Perplexity API."""
 
     job_title: str
@@ -39,8 +36,7 @@ class JobRecommendation:
     sources: list[JobSource]
 
 
-@dataclass
-class JobSearchResult:
+class JobSearchResult(BaseModel):
     """Result from Perplexity job search."""
 
     recommendations: list[JobRecommendation]
@@ -48,8 +44,7 @@ class JobSearchResult:
     error: str | None = None
 
 
-@dataclass
-class JobPreferences:
+class JobPreferences(BaseModel):
     """求職者の希望条件."""
 
     location: str = "東京"
@@ -60,7 +55,11 @@ class JobPreferences:
     other: str = ""
 
 
-def build_search_prompt(profile: dict, preferences: JobPreferences) -> str:
+def build_search_prompt(
+    profile: dict,
+    preferences: JobPreferences,
+    exclude_companies: list[str] | None = None,
+) -> str:
     """Build Perplexity search prompt from developer profile."""
     tech_stack = profile.get("tech_stack", {})
     job_fit = profile.get("job_fit", {})
@@ -95,14 +94,19 @@ def build_search_prompt(profile: dict, preferences: JobPreferences) -> str:
     if preferences.employment_type:
         conditions.append(f"雇用形態: {', '.join(preferences.employment_type)}")
     if preferences.other:
-        conditions.append(f"その他: {preferences.other}")
+        conditions.append(f"その他の希望・アピールポイント: {preferences.other}")
 
     conditions_text = "\n- ".join(conditions)
     keywords_text = ", ".join(keywords) if keywords else ""
     interests_text = ", ".join(interests) if interests else ""
     expertise_text = "\n".join(expertise_summary) if expertise_summary else ""
 
-    return f"""You are a job search assistant.
+    # 除外企業リスト
+    exclude_text = ""
+    if exclude_companies:
+        exclude_text = f"\n\nIMPORTANT: Do NOT include jobs from these companies (already shown): {', '.join(exclude_companies)}"
+
+    return f"""You are a job search assistant.{exclude_text}
 
 Search the web and find up to 3 job postings that match the following criteria:
 - Role: {", ".join(roles) if roles else "Software Engineer"}
@@ -145,13 +149,16 @@ Return the result strictly in the following JSON format:
 
 
 def search_jobs(
-    profile: dict, preferences: JobPreferences | None = None
+    profile: dict,
+    preferences: JobPreferences | None = None,
+    exclude_companies: list[str] | None = None,
 ) -> JobSearchResult:
     """Search for jobs using Perplexity API with built-in matching analysis.
 
     Args:
         profile: Developer profile from generate_profile()
         preferences: 求職者の希望条件
+        exclude_companies: 除外する企業名リスト（追加検索時に使用）
 
     Returns:
         JobSearchResult with recommendations and status
@@ -167,7 +174,7 @@ def search_jobs(
             error="PERPLEXITY_API_KEY environment variable is required",
         )
 
-    prompt = build_search_prompt(profile, preferences)
+    prompt = build_search_prompt(profile, preferences, exclude_companies)
 
     # 検索条件をログ出力
     tech_stack = profile.get("tech_stack", {})
@@ -307,8 +314,7 @@ def search_jobs(
         )
 
 
-@dataclass
-class JobUrlResult:
+class JobUrlResult(BaseModel):
     """求人URL検索結果."""
 
     url: str | None
