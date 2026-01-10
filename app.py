@@ -58,6 +58,8 @@ pages = {
     ],
     "情報": [
         st.Page("pages/plans.py", title="プラン・利用制限", icon="📋"),
+        st.Page("pages/privacy.py", title="プライバシーポリシー", icon="🔒"),
+        st.Page("pages/terms.py", title="利用規約", icon="📜"),
     ],
 }
 
