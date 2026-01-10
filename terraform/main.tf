@@ -6,6 +6,10 @@ resource "google_artifact_registry_repository" "app" {
   format        = "DOCKER"
   location      = var.region
   description   = "Docker images for Job Recommender"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # ============================================

@@ -28,4 +28,3 @@ variable "cloudbuild_repository_id" {
   description = "Full repository ID from Cloud Build (format: projects/{project}/locations/{region}/connections/{connection}/repositories/{repo})"
   type        = string
 }
-

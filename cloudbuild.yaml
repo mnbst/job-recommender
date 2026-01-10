@@ -47,15 +47,24 @@ steps:
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app'
 
   # Deploy to Cloud Run
+  # main branch → blue (production), other branches → green (staging)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
     args:
-      - 'gcloud'
-      - 'run'
-      - 'deploy'
-      - 'job-recommender'
-      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA}'
-      - '--region=${_REGION}'
-      - '--platform=managed'
+      - '-c'
+      - |
+        if [ "$BRANCH_NAME" = "main" ]; then
+          echo "Deploying to BLUE (production)..."
+          DEPLOY_OPTS=""
+        else
+          echo "Deploying to GREEN (staging)..."
+          DEPLOY_OPTS="--no-traffic --tag=green"
+        fi
+        gcloud run deploy job-recommender \
+          --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA} \
+          --region=${_REGION} \
+          --platform=managed \
+          $DEPLOY_OPTS
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA}'

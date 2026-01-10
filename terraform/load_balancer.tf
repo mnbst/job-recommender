@@ -22,7 +22,7 @@ resource "google_compute_region_network_endpoint_group" "cloudrun_neg" {
   }
 }
 
-# Backend Service
+# Backend Service (Blue - Production)
 resource "google_compute_backend_service" "app" {
   name                  = "job-recommender-backend"
   protocol              = "HTTPS"
