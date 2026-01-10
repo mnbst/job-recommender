@@ -5,7 +5,17 @@ import streamlit as st
 from services.cache import UserSettings, get_user_settings, save_user_settings
 from services.quota import QuotaStatus, consume_credit, get_quota_status
 from services.research import JobPreferences, JobSearchResult, search_jobs
-from services.session_keys import JOB_PREFERENCES, JOB_RESULTS
+from services.session_keys import (
+    EMPLOYMENT_TYPE,
+    JOB_LOCATION,
+    JOB_PREFERENCES,
+    JOB_RESULTS,
+    JOB_TYPE,
+    OTHER_PREFERENCES,
+    SALARY_RANGE,
+    SETTINGS_LOADED,
+    WORK_STYLE,
+)
 
 
 def _save_settings(user_id: int, repo_limit: int) -> None:
@@ -14,27 +24,27 @@ def _save_settings(user_id: int, repo_limit: int) -> None:
         return
     settings = UserSettings(
         repo_limit=repo_limit,
-        job_location=st.session_state.get("job_location", "東京"),
-        salary_range=st.session_state.get("salary_range", "指定なし"),
-        work_style=st.session_state.get("work_style", []),
-        job_type=st.session_state.get("job_type", []),
-        employment_type=st.session_state.get("employment_type", []),
-        other_preferences=st.session_state.get("other_preferences", ""),
+        job_location=st.session_state.get(JOB_LOCATION, "東京"),
+        salary_range=st.session_state.get(SALARY_RANGE, "指定なし"),
+        work_style=st.session_state.get(WORK_STYLE, []),
+        job_type=st.session_state.get(JOB_TYPE, []),
+        employment_type=st.session_state.get(EMPLOYMENT_TYPE, []),
+        other_preferences=st.session_state.get(OTHER_PREFERENCES, ""),
     )
     save_user_settings(user_id, settings)
 
 
 def load_settings(user_id: int) -> None:
     """Firestoreから設定を読み込み."""
-    if "settings_loaded" not in st.session_state and user_id:
+    if SETTINGS_LOADED not in st.session_state and user_id:
         saved_settings = get_user_settings(user_id)
-        st.session_state["job_location"] = saved_settings.job_location
-        st.session_state["salary_range"] = saved_settings.salary_range
-        st.session_state["work_style"] = saved_settings.work_style
-        st.session_state["job_type"] = saved_settings.job_type
-        st.session_state["employment_type"] = saved_settings.employment_type
-        st.session_state["other_preferences"] = saved_settings.other_preferences
-        st.session_state["settings_loaded"] = True
+        st.session_state[JOB_LOCATION] = saved_settings.job_location
+        st.session_state[SALARY_RANGE] = saved_settings.salary_range
+        st.session_state[WORK_STYLE] = saved_settings.work_style
+        st.session_state[JOB_TYPE] = saved_settings.job_type
+        st.session_state[EMPLOYMENT_TYPE] = saved_settings.employment_type
+        st.session_state[OTHER_PREFERENCES] = saved_settings.other_preferences
+        st.session_state[SETTINGS_LOADED] = True
 
 
 def job_search(
@@ -56,7 +66,7 @@ def job_search(
                 st.text_input(
                     "勤務地",
                     placeholder="例: 東京、大阪、リモート",
-                    key="job_location",
+                    key=JOB_LOCATION,
                 )
                 st.select_slider(
                     "希望年収",
@@ -68,7 +78,7 @@ def job_search(
                         "800万〜",
                         "1000万〜",
                     ],
-                    key="salary_range",
+                    key=SALARY_RANGE,
                 )
                 st.multiselect(
                     "働き方",
@@ -79,7 +89,7 @@ def job_search(
                         "フレックス",
                         "副業OK",
                     ],
-                    key="work_style",
+                    key=WORK_STYLE,
                 )
 
             with col2:
@@ -95,18 +105,18 @@ def job_search(
                         "テックリード",
                         "EM",
                     ],
-                    key="job_type",
+                    key=JOB_TYPE,
                 )
                 st.multiselect(
                     "雇用形態",
                     options=["正社員", "フリーランス", "業務委託", "契約社員"],
-                    key="employment_type",
+                    key=EMPLOYMENT_TYPE,
                 )
                 st.text_area(
                     "その他の希望またはアピールポイント",
                     placeholder="例: スタートアップ希望、自社サービス開発、マネジメント経験ありなど",
                     height=100,
-                    key="other_preferences",
+                    key=OTHER_PREFERENCES,
                 )
 
     search_conditions()
@@ -131,12 +141,12 @@ def job_search(
 
         with st.spinner("求人を検索中..."):
             preferences = JobPreferences(
-                location=st.session_state.get("job_location", ""),
-                salary_range=st.session_state.get("salary_range", "指定なし"),
-                work_style=st.session_state.get("work_style") or None,
-                job_type=st.session_state.get("job_type") or None,
-                employment_type=st.session_state.get("employment_type") or None,
-                other=st.session_state.get("other_preferences", ""),
+                location=st.session_state.get(JOB_LOCATION, ""),
+                salary_range=st.session_state.get(SALARY_RANGE, "指定なし"),
+                work_style=st.session_state.get(WORK_STYLE) or None,
+                job_type=st.session_state.get(JOB_TYPE) or None,
+                employment_type=st.session_state.get(EMPLOYMENT_TYPE) or None,
+                other=st.session_state.get(OTHER_PREFERENCES, ""),
             )
             # 検索条件を保存（追加検索用）
             st.session_state[JOB_PREFERENCES] = preferences

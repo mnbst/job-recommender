@@ -11,6 +11,28 @@ import streamlit as st
 from pydantic import BaseModel
 
 from services.const import GITHUB_AUTHORIZE_URL, GITHUB_TOKEN_URL, GITHUB_USER_URL
+from services.session_keys import (
+    ACCESS_TOKEN,
+    EMPLOYMENT_TYPE,
+    JOB_LOCATION,
+    JOB_PREFERENCES,
+    JOB_RESULTS,
+    JOB_TYPE,
+    OTHER_PREFERENCES,
+    PROFILE,
+    PROFILE_STATE,
+    QUOTA_STATUS,
+    REGEN_REPO_METADATA_LIST,
+    REGEN_SELECTED_REPOS,
+    REPO_METADATA_LIST,
+    SALARY_RANGE,
+    SELECTED_REPOS,
+    SESSION_ID,
+    SETTINGS_LOADED,
+    USER,
+    USER_SETTINGS,
+    WORK_STYLE,
+)
 
 if TYPE_CHECKING:
     import extra_streamlit_components as stx
@@ -124,8 +146,8 @@ def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bo
         return False
 
     # セッションに保存
-    st.session_state["user"] = user
-    st.session_state["access_token"] = access_token
+    st.session_state[USER] = user
+    st.session_state[ACCESS_TOKEN] = access_token
 
     # セッション永続化
     if cookie_manager is not None:
@@ -138,7 +160,7 @@ def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bo
         session_id = generate_session_id()
         save_firestore_session(session_id, user, access_token)
         set_session_cookie(cookie_manager, session_id)
-        st.session_state["session_id"] = session_id
+        st.session_state[SESSION_ID] = session_id
 
     # クエリパラメータをクリア
     st.query_params.clear()
@@ -148,12 +170,34 @@ def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bo
 
 def get_current_user() -> GitHubUser | None:
     """現在認証されているユーザーを取得."""
-    return st.session_state.get("user")
+    return st.session_state.get(USER)
 
 
 def is_authenticated() -> bool:
     """ユーザーが認証されているかチェック."""
     return get_current_user() is not None
+
+
+def revoke_github_token(access_token: str) -> None:
+    """GitHubのOAuthトークンを取り消し.
+
+    これにより、次回ログイン時にGitHubの認証画面が表示される。
+    """
+    client_id, client_secret = get_oauth_config()
+    if not client_id or not client_secret:
+        return
+
+    try:
+        # OAuth App認可自体を取り消す（トークンだけでなく認可全体）
+        httpx.request(
+            "DELETE",
+            f"https://api.github.com/applications/{client_id}/grant",
+            auth=(client_id, client_secret),
+            json={"access_token": access_token},
+        )
+    except Exception:
+        # 取り消し失敗は無視（ローカルログアウトは続行）
+        pass
 
 
 def logout(cookie_manager: stx.CookieManager | None = None) -> None:
@@ -162,17 +206,47 @@ def logout(cookie_manager: stx.CookieManager | None = None) -> None:
     Args:
         cookie_manager: CookieManager（セッション削除用、Noneの場合はローカルのみクリア）
     """
+    # GitHubトークンの取り消し（別アカウントでのログインを可能にする）
+    access_token = st.session_state.get(ACCESS_TOKEN)
+    if access_token:
+        revoke_github_token(access_token)
+
     # 永続化セッションの削除
-    session_id = st.session_state.get("session_id")
+    session_id = st.session_state.get(SESSION_ID)
+    if cookie_manager is not None and not session_id:
+        from services.session import get_session_cookie
+
+        session_id = get_session_cookie(cookie_manager)
+
     if session_id and cookie_manager is not None:
         from services.session import delete_firestore_session, delete_session_cookie
 
         delete_firestore_session(session_id)
         delete_session_cookie(cookie_manager)
 
-    st.session_state.pop("user", None)
-    st.session_state.pop("access_token", None)
-    st.session_state.pop("session_id", None)
+    # 認証情報 + ユーザー固有キャッシュ/状態をまとめてクリア
+    keys_to_clear = [
+        USER,
+        ACCESS_TOKEN,
+        SESSION_ID,
+        PROFILE_STATE,
+        REPO_METADATA_LIST,
+        SELECTED_REPOS,
+        REGEN_REPO_METADATA_LIST,
+        REGEN_SELECTED_REPOS,
+        SETTINGS_LOADED,
+        JOB_LOCATION,
+        SALARY_RANGE,
+        WORK_STYLE,
+        JOB_TYPE,
+        EMPLOYMENT_TYPE,
+        OTHER_PREFERENCES,
+    ]
+    for key in keys_to_clear:
+        st.session_state.pop(key, None)
+
+    for key in (PROFILE, USER_SETTINGS, QUOTA_STATUS, JOB_RESULTS, JOB_PREFERENCES):
+        st.session_state.pop(key, None)
 
 
 def render_login_button(redirect_uri: str) -> None:
@@ -246,9 +320,9 @@ def restore_session(cookie_manager: stx.CookieManager) -> bool:
 
     # セッション復元
     user, access_token = restore_session_from_dict(session_data)
-    st.session_state["user"] = user
-    st.session_state["access_token"] = access_token
-    st.session_state["session_id"] = session_id
+    st.session_state[USER] = user
+    st.session_state[ACCESS_TOKEN] = access_token
+    st.session_state[SESSION_ID] = session_id
 
     # last_accessed_at を更新
     update_session_last_accessed(session_id)

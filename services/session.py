@@ -66,7 +66,8 @@ def delete_session_cookie(cookie_manager: stx.CookieManager) -> None:
     Args:
         cookie_manager: CookieManagerインスタンス
     """
-    cookie_manager.delete(cookie=SESSION_COOKIE_NAME)
+    if cookie_manager.get(cookie=SESSION_COOKIE_NAME) is not None:
+        cookie_manager.delete(cookie=SESSION_COOKIE_NAME)
 
 
 def get_firestore_session(session_id: str) -> dict[str, Any] | None:
