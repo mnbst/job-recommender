@@ -154,7 +154,7 @@ resource "google_cloud_run_v2_service" "app" {
 
       env {
         name  = "OAUTH_REDIRECT_URI"
-        value = "https://${google_compute_global_address.lb_ip.address}.nip.io"
+        value = var.domain_name != "" ? "https://${var.domain_name}" : "https://${google_compute_global_address.lb_ip.address}.nip.io"
       }
     }
 

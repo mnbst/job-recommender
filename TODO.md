@@ -1,26 +1,8 @@
 # TODO
 
-## Phase 1: マネタイズ基盤（優先）
+## Phase 1: マネタイズ基盤
 
-### Step 1: ユーザー認証
-- [x] GitHub OAuth ログイン実装
-- [x] ユーザーセッション管理（Streamlit session_state）
-- [x] Firestore でユーザー情報保存
-- [x] セッション永続化（JWT + Firestore ハイブリッド）
-  - JWT Cookie: ユーザーID・ログイン名のみ
-  - Firestore: GitHubアクセストークン保存
-  - 有効期限1日、Secret Manager に JWT_SECRET 追加済み
-
-### Step 2: フリーミアム機能制限
-- [x] 共通クレジット制に統合
-  - 初回: 5クレジット
-  - 補充: なし
-- [x] クレジット消費ポイント
-  - プロファイル生成: 1クレジット
-  - 求人検索（初回3件）: 1クレジット
-  - 求人追加表示（+3件）: 1クレジット
-
-### Step 3: 決済基盤（Stripe）
+### Step 1: 決済基盤（Stripe）
 - [ ] Stripe アカウント作成・設定
 - [ ] Checkout Session 実装
 - [ ] Webhook で支払い確認
@@ -30,8 +12,7 @@
   - プレミアム: ¥1,800 / 30回（¥60/回）
 
 ### Step 2: アフィリエイト（並行検討）
-- [ ] アフィリエイト提携先調査
-  - Green、Wantedly、Findy、Geekly など
+- [ ] アフィリエイト提携先調査（Green、Wantedly、Findy、Geekly）
 - [ ] 求人リンクにアフィリエイトタグ付与
 - [ ] クリック・成約トラッキング
 
@@ -39,97 +20,72 @@
 
 ## Phase 2: 機能拡充
 
-### 分析履歴
+### Step 1: プロファイル生成改善
+- [x] 分析対象リポジトリの選択機能
+- [ ] モデル変更検討（gemini-2.5-flash → claude-opus-4 or claude-sonnet-4）
+
+### Step 2: 求人検索改善
+- [ ] 求人APIの導入検討
+  - Jooble API（無料）- 求人アグリゲーター
+  - SerpAPI（有料$50~/月）- Google Jobs検索
+  - Adzuna API（無料枠あり）
+
+### Step 3: 分析履歴
 - [ ] 過去の分析結果一覧表示
 - [ ] 結果の比較機能
 
-### プレミアム機能
+### Step 4: プレミアム機能
 - [ ] 詳細スキル分析レポート（PDF出力）
 - [ ] 職務経歴書の自動生成
 - [ ] 面接対策アドバイス
-
-### リポジトリ絞り込み
-- [ ] 分析対象リポジトリの選択機能
-
-### プロファイル生成改善
-- [ ] モデル変更検討（gemini-2.5-flash → claude-opus-4 or claude-sonnet-4）
-  - コード理解・設計力評価の精度向上
-  - Vertex AI Model Garden経由で実装
-
-### 求人詳細ページ取得改善
-- [ ] 求人APIの導入検討
-  - Jooble API（無料）- 求人アグリゲーター、詳細URL含む
-  - SerpAPI（有料$50~/月）- Google Jobs検索、確実性高い
-  - Adzuna API（無料枠あり）- UK中心だが日本も一部対応
-- [ ] 目標: 企業の募集ページまたは仲介サイトの詳細ページに確実に誘導
-
-### 求人応募サポート
 - [ ] 求人へのワンクリック応募
-- [ ] 応募状況トラッキング
 
 ---
 
 ## Phase 3: マーケティング・法務
 
-### マーケティング
-- [ ] LP（ランディングページ）作成
-- [ ] SEO対策（メタタグ、OGP）
-- [ ] SNS展開（Twitter/X、Qiita/Zenn）
-- [ ] Google Analytics導入
-
-### 法務（優先度高）
-- [ ] 利用規約作成
-  - **必須**: 「本人の就職活動支援目的のみ」と明記（GitHub API制限準拠）
+### Step 1: 法務（優先）
+- [ ] 利用規約作成（「本人の就職活動支援目的のみ」明記）
 - [ ] プライバシーポリシー作成
 - [ ] 特定商取引法に基づく表記
-- [ ] GitHub Developer Programへの確認（推奨）
+
+### Step 2: マーケティング
+- [ ] LP作成
+- [ ] SEO対策（メタタグ、OGP）
+- [ ] SNS展開（X、Qiita/Zenn）
+- [ ] Google Analytics導入
 
 ---
 
-## Phase 4: インフラ改善（後回し）
+## Phase 4: インフラ改善
 
-### ネットワークセキュリティ
-- [ ] Cloud Armor 導入（優先度高）
-  - WAF（SQLi/XSS防御）- OWASP Top 10 対策
-  - レート制限（API乱用・ブルートフォース対策）
-  - `google_compute_security_policy` → Backend Service に適用
-- [ ] IPアクセス制限（必要に応じて）
-  - 特定国/IPレンジのみ許可
-- [ ] Bot対策
-  - reCAPTCHA Enterprise 統合（Cloud Armor経由）
-- [ ] VPC Service Controls（コスト増・複雑化とのトレードオフ）
-  - Private Google Access で Vertex AI への内部通信化
+### Step 1: セキュリティ
+- [ ] Cloud Armor 導入（WAF、レート制限）
+- [ ] Bot対策（reCAPTCHA Enterprise）
 
-### その他インフラ
-- [x] 一般公開対応（IAP削除）
-- [x] terraform.tfvars の機密情報保護（.gitignoreに追加済み）
-- [ ] カスタムドメイン取得・設定
-  - ドメイン取得（Google Domains / Cloudflare など）
-  - Cloud DNS ゾーン作成
-  - SSL証明書（Google-managed）設定
-  - Load Balancer にドメイン紐付け
-  - GitHub OAuth App の callback URL 更新
-- [ ] アラート設定（monitoring.tf）
+### Step 2: ドメイン・監視
+- [x] カスタムドメイン取得・設定
+- [ ] アラート設定
+
+### Step 3: デプロイ改善
 - [ ] Blue-Green デプロイ対応
 - [ ] 構造化ログ実装
 
 ---
 
-## 中止: API利用規約違反のリスク
+## 完了済み
+- [x] 一般公開対応（IAP削除）
+- [x] terraform.tfvars の機密情報保護
+- [x] リポジトリ絞り込み機能
 
-以下は **GitHub API利用規約違反** の可能性が高いため中止:
+---
 
-> You may not use the API to download data or Content from GitHub for spamming purposes, including for the purposes of **selling GitHub users' personal information, such as to recruiters, headhunters, and job boards**.
+## 中止（API利用規約違反リスク）
 
-### B2B（企業向け）❌
-- GitHubユーザー検索・スカウト機能
-- 候補者リスト作成・エクスポート
-- → **「recruiters, headhunters」への販売に該当**
-
-### API提供 ❌
-- GitHubプロファイル分析API
-- 求人マッチングAPI
-- → **第三者への再販売に該当**
+| 機能 | 理由 |
+|------|------|
+| B2B（企業向けスカウト） | GitHub API: recruiters/headhuntersへの販売禁止 |
+| API提供 | 第三者への再販売に該当 |
 
 ---
 
@@ -137,8 +93,8 @@
 
 | API | 商用利用 | 注意点 |
 |-----|---------|--------|
-| GitHub API | 🟡 条件付き | ユーザー本人のOAuth認証必須。B2B/API提供はNG |
-| Vertex AI (Gemini) | ✅ OK | 競合サービス開発は禁止 |
-| Perplexity AI | ✅ OK | 有料プラン必須。AUP準拠 |
+| GitHub API | 条件付き | ユーザー本人のOAuth認証必須。B2B/API提供はNG |
+| Vertex AI | OK | 競合サービス開発は禁止 |
+| Perplexity AI | OK | 有料プラン必須 |
 
-**推奨収益化パス**: B2C（フリーミアム＋有料クレジット）+ アフィリエイト
+**収益化パス**: B2C（フリーミアム＋有料クレジット）+ アフィリエイト

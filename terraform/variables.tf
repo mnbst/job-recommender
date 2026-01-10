@@ -15,6 +15,12 @@ variable "domain_name" {
   default     = ""
 }
 
+variable "www_domain_name" {
+  description = "WWW subdomain (optional)"
+  type        = string
+  default     = ""
+}
+
 # ============================================
 # Cloud Build Variables
 # ============================================

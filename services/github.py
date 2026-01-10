@@ -58,6 +58,17 @@ class FileContent(BaseModel):
     content: str
 
 
+class RepoMetadata(BaseModel):
+    """Lightweight repository metadata for selection UI."""
+
+    name: str
+    full_name: str
+    description: str | None
+    language: str | None
+    stars: int
+    is_fork: bool
+
+
 class RepoInfo(BaseModel):
     """Repository information extracted from GitHub."""
 
@@ -91,6 +102,51 @@ def get_user_repos(username: str, limit: int = 10) -> list[Repository]:
     user = client.get_user(username)
     repos = list(user.get_repos(sort="updated", direction="desc"))
     return repos[:limit]
+
+
+def get_repos_metadata(username: str, limit: int = 30) -> list[RepoMetadata]:
+    """Fetch lightweight metadata for user's repositories.
+
+    Args:
+        username: GitHub username
+        limit: Maximum number of repos to fetch (default: 30)
+
+    Returns:
+        List of RepoMetadata for selection UI
+    """
+    repos = get_user_repos(username, limit)
+    return [
+        RepoMetadata(
+            name=repo.name,
+            full_name=repo.full_name,
+            description=repo.description,
+            language=repo.language,
+            stars=repo.stargazers_count,
+            is_fork=repo.fork,
+        )
+        for repo in repos
+    ]
+
+
+def get_repos_by_names(username: str, repo_names: list[str]) -> list[Repository]:
+    """Fetch specific repositories by name.
+
+    Args:
+        username: GitHub username
+        repo_names: List of repository names to fetch
+
+    Returns:
+        List of Repository objects
+    """
+    client = get_github_client()
+    repos = []
+    for name in repo_names:
+        try:
+            repo = client.get_repo(f"{username}/{name}")
+            repos.append(repo)
+        except Exception:
+            pass
+    return repos
 
 
 def get_repo_structure(repo: Repository, max_depth: int = 2) -> list[str]:
@@ -270,4 +326,18 @@ def extract_repo_info(repo: Repository) -> RepoInfo:
 def analyze_github_profile(username: str, repo_limit: int = 10) -> list[RepoInfo]:
     """Analyze a GitHub user's profile and return repository information."""
     repos = get_user_repos(username, limit=repo_limit)
+    return [extract_repo_info(repo) for repo in repos]
+
+
+def analyze_selected_repos(username: str, repo_names: list[str]) -> list[RepoInfo]:
+    """Analyze selected repositories and return repository information.
+
+    Args:
+        username: GitHub username
+        repo_names: List of repository names to analyze
+
+    Returns:
+        List of RepoInfo for selected repositories
+    """
+    repos = get_repos_by_names(username, repo_names)
     return [extract_repo_info(repo) for repo in repos]
