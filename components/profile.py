@@ -95,9 +95,7 @@ def _render_repo_selector(
     options = {_format_repo_label(r): r.name for r in repos_meta}
 
     # Fork以外をデフォルト選択
-    default_labels = [
-        _format_repo_label(r) for r in repos_meta if not r.is_fork
-    ][:10]
+    default_labels = [_format_repo_label(r) for r in repos_meta if not r.is_fork][:10]
 
     selected_labels = st.multiselect(
         "分析対象のリポジトリを選択",
