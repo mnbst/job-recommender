@@ -9,10 +9,18 @@ from services.cache import (
     save_profile_cache,
     save_repos_cache,
 )
-from services.github import analyze_github_profile
+from services.github import (
+    RepoMetadata,
+    analyze_selected_repos,
+    get_repos_metadata,
+)
 from services.profile import generate_profile
 from services.quota import QuotaStatus, consume_credit
 from services.session_keys import JOB_RESULTS
+
+# セッションキー
+REPO_METADATA_KEY = "repo_metadata_list"
+SELECTED_REPOS_KEY = "selected_repos"
 
 
 def display_profile(profile: dict) -> None:
@@ -45,6 +53,67 @@ def display_profile(profile: dict) -> None:
     st.info(profile.get("summary", ""))
 
 
+def _format_repo_label(repo: RepoMetadata) -> str:
+    """リポジトリのラベルをフォーマット."""
+    lang = repo.language or "N/A"
+    fork_badge = " [Fork]" if repo.is_fork else ""
+    return f"{repo.name} ({lang}, {repo.stars} stars){fork_badge}"
+
+
+def _render_repo_selector(
+    user_login: str,
+    repo_limit: int,
+    key_prefix: str = "",
+) -> list[str] | None:
+    """リポジトリ選択UIを描画.
+
+    Returns:
+        選択されたリポジトリ名のリスト、または未選択/読み込み前はNone
+    """
+    metadata_key = f"{key_prefix}{REPO_METADATA_KEY}"
+    selected_key = f"{key_prefix}{SELECTED_REPOS_KEY}"
+
+    # リポジトリ一覧を読み込み
+    if metadata_key not in st.session_state:
+        if st.button("リポジトリを読み込む", key=f"{key_prefix}load_repos"):
+            with st.spinner("リポジトリ一覧を取得中..."):
+                repos_meta = get_repos_metadata(user_login, limit=repo_limit)
+                st.session_state[metadata_key] = repos_meta
+                st.rerun()
+        return None
+
+    repos_meta: list[RepoMetadata] = st.session_state[metadata_key]
+
+    if not repos_meta:
+        st.warning("リポジトリが見つかりませんでした")
+        return None
+
+    # リポジトリ選択UI
+    st.caption(f"{len(repos_meta)} 件のリポジトリが見つかりました")
+
+    # オプション作成
+    options = {_format_repo_label(r): r.name for r in repos_meta}
+
+    # Fork以外をデフォルト選択
+    default_labels = [
+        _format_repo_label(r) for r in repos_meta if not r.is_fork
+    ][:10]
+
+    selected_labels = st.multiselect(
+        "分析対象のリポジトリを選択",
+        options=list(options.keys()),
+        default=default_labels,
+        key=selected_key,
+        help="プロファイル生成に使用するリポジトリを選択してください",
+    )
+
+    if not selected_labels:
+        st.warning("少なくとも1つのリポジトリを選択してください")
+        return None
+
+    return [options[label] for label in selected_labels]
+
+
 def profile_section(
     user_id: int,
     user_login: str,
@@ -64,57 +133,64 @@ def profile_section(
         display_profile(cached_profile)
         st.session_state["profile"] = cached_profile
 
-        regen_col1, regen_col2 = st.columns([3, 1])
-        with regen_col1:
-            regen_disabled = not quota.can_use
-            if st.button(
-                "プロファイル再生成",
-                disabled=regen_disabled,
-                help="最新のリポジトリ情報でプロファイルを再生成",
-            ):
-                _regenerate_profile(user_id, user_login, repo_limit)
+        # 再生成UI
+        with st.expander("プロファイルを再生成"):
+            if not quota.can_use:
+                st.warning("クレジットがありません。")
+                return cached_profile
 
-        with regen_col2:
             st.caption(f"残り {quota.credits} クレジット")
 
-        if regen_disabled:
-            st.warning("クレジットがありません。")
+            selected_repos = _render_repo_selector(
+                user_login, repo_limit * 3, key_prefix="regen_"
+            )
+
+            if selected_repos:
+                if st.button(
+                    f"{len(selected_repos)} 件のリポジトリでプロファイル再生成",
+                    type="primary",
+                    key="regen_profile_btn",
+                ):
+                    _regenerate_profile(user_id, user_login, selected_repos)
 
         return cached_profile
 
     # プロファイル未生成
     st.info("プロファイルを生成して、あなたに最適な求人を見つけましょう。")
 
-    gen_col1, gen_col2 = st.columns([1, 3])
-    with gen_col1:
-        gen_disabled = not quota.can_use
-        if st.button(
-            "プロファイルを生成",
-            type="primary",
-            disabled=gen_disabled,
-            use_container_width=True,
-        ):
-            _generate_profile(user_id, user_login, repo_limit)
-
-    with gen_col2:
-        st.caption(f"残り {quota.credits} クレジット")
-
-    if gen_disabled:
+    if not quota.can_use:
         st.warning("クレジットがありません。")
+        return None
+
+    st.caption(f"残り {quota.credits} クレジット")
+
+    selected_repos = _render_repo_selector(user_login, repo_limit * 3)
+
+    if selected_repos:
+        if st.button(
+            f"{len(selected_repos)} 件のリポジトリでプロファイル生成",
+            type="primary",
+        ):
+            _generate_profile(user_id, user_login, selected_repos)
 
     return None
 
 
-def _regenerate_profile(user_id: int, user_login: str, repo_limit: int) -> None:
+def _regenerate_profile(
+    user_id: int, user_login: str, repo_names: list[str]
+) -> None:
     """プロファイルを再生成."""
     consume_credit(user_id)
     invalidate_repos_cache(user_id)
     invalidate_profile_cache(user_id)
     st.session_state.pop("profile", None)
     st.session_state.pop(JOB_RESULTS, None)
+    # セレクター状態をクリア
+    st.session_state.pop(f"regen_{REPO_METADATA_KEY}", None)
+    st.session_state.pop(f"regen_{SELECTED_REPOS_KEY}", None)
 
     with st.spinner("プロファイルを再生成中..."):
-        repos = analyze_github_profile(user_login, repo_limit)
+        repos = analyze_selected_repos(user_login, repo_names)
         if repos:
             save_repos_cache(user_id, repos)
             profile = generate_profile(repos)
@@ -126,16 +202,21 @@ def _regenerate_profile(user_id: int, user_login: str, repo_limit: int) -> None:
             )
             st.session_state["profile"] = profile
         else:
-            st.error("リポジトリが見つかりませんでした")
+            st.error("リポジトリの分析に失敗しました")
         st.rerun()
 
 
-def _generate_profile(user_id: int, user_login: str, repo_limit: int) -> None:
+def _generate_profile(
+    user_id: int, user_login: str, repo_names: list[str]
+) -> None:
     """プロファイルを新規生成."""
     consume_credit(user_id)
+    # セレクター状態をクリア
+    st.session_state.pop(REPO_METADATA_KEY, None)
+    st.session_state.pop(SELECTED_REPOS_KEY, None)
 
     with st.spinner("GitHubプロファイルを分析中..."):
-        repos = analyze_github_profile(user_login, repo_limit)
+        repos = analyze_selected_repos(user_login, repo_names)
         if repos:
             save_repos_cache(user_id, repos)
             profile = generate_profile(repos)
@@ -147,5 +228,5 @@ def _generate_profile(user_id: int, user_login: str, repo_limit: int) -> None:
             )
             st.session_state["profile"] = profile
         else:
-            st.error("リポジトリが見つかりませんでした")
+            st.error("リポジトリの分析に失敗しました")
         st.rerun()

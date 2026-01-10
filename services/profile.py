@@ -119,7 +119,8 @@ def generate_profile(repos: list[RepoInfo]) -> dict:
 {json.dumps(repo_summaries, ensure_ascii=False, indent=2)}
 
 {parser.get_format_instructions()}
-"""
+
+重要: 出力は純粋なJSONのみにしてください。マークダウンのコードブロック（```）や説明文は不要です。"""
 
     response = model.generate_content(prompt)
     profile = parser.parse(response.text)

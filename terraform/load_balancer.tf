@@ -5,6 +5,10 @@
 # 静的IPアドレス（グローバル）
 resource "google_compute_global_address" "lb_ip" {
   name = "job-recommender-lb-ip"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Serverless NEG
@@ -48,7 +52,9 @@ resource "google_compute_managed_ssl_certificate" "app" {
   name = var.domain_name != "" ? "job-recommender-cert-custom" : "job-recommender-cert-nipio"
 
   managed {
-    domains = var.domain_name != "" ? [var.domain_name] : ["${google_compute_global_address.lb_ip.address}.nip.io"]
+    domains = var.domain_name != "" ? (
+      var.www_domain_name != "" ? [var.domain_name, var.www_domain_name] : [var.domain_name]
+    ) : ["${google_compute_global_address.lb_ip.address}.nip.io"]
   }
 
   lifecycle {
