@@ -29,3 +29,11 @@ variable "cloudbuild_repository_id" {
   type        = string
 }
 
+# ============================================
+# Cloud Run IAM
+# ============================================
+variable "cloud_run_invoker_members" {
+  description = "Members allowed to invoke Cloud Run (e.g. user:alice@gmail.com)"
+  type        = list(string)
+  default     = []
+}

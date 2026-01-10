@@ -29,7 +29,10 @@ services/
   github.py      → GitHub API (PyGithub) - RepoInfo取得
   profile.py     → Vertex AI Gemini - プロファイル生成
   research.py    → Perplexity AI - 求人検索 + マッチング分析
-terraform/       → インフラ定義 (Cloud Run + LB)
+terraform/       → インフラ定義 (Cloud Run + LB + Blue-Green)
+scripts/
+  proxy-green.sh → Green環境へのローカルプロキシ
+  rollback.sh    → 前リビジョンへのロールバック
 Dockerfile       → Python 3.11-slim + uv
 ```
 
@@ -70,13 +73,17 @@ uv run streamlit run app.py
 uv run pytest
 uv run ruff check . && uv run ruff format .
 
-# デプロイ
+# デプロイ (Blue本番)
 gcloud builds submit --tag asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
 
 # Terraform
 cd terraform
 terraform init -backend-config="bucket=${PROJECT_ID}-tfstate"
 terraform plan && terraform apply
+
+# Blue-Green デプロイ
+./scripts/proxy-green.sh              # Green環境をローカルで検証
+./scripts/rollback.sh                 # 前リビジョンにロールバック
 ```
 
 ## Environment Variables
@@ -85,26 +92,50 @@ Secret Managerで管理（Terraformは参照のみ）:
 |---------------|------|
 | `github_token` | GitHub PAT（リポジトリ取得用） |
 | `perplexity_api_key` | Perplexity APIキー |
-| `github_oauth_client_id` | GitHub OAuth App Client ID |
-| `github_oauth_client_secret` | GitHub OAuth App Client Secret |
+| `github_oauth_client_id` | Blue用 OAuth App Client ID |
+| `github_oauth_client_secret` | Blue用 OAuth App Client Secret |
+| `green_github_oauth_client_id` | Green用 OAuth App Client ID |
+| `green_github_oauth_client_secret` | Green用 OAuth App Client Secret |
 
-Cloud Runに自動注入される環境変数:
-- `GITHUB_TOKEN` - Secret Managerから
-- `PERPLEXITY_API_KEY` - Secret Managerから
-- `GITHUB_OAUTH_CLIENT_ID` - Secret Managerから
-- `GITHUB_OAUTH_CLIENT_SECRET` - Secret Managerから
+Cloud Runに自動注入される環境変数（Blue/Green共通）:
+- `GITHUB_TOKEN`, `PERPLEXITY_API_KEY` - Secret Managerから
+- `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET` - 各環境用を注入
 - `OAUTH_REDIRECT_URI` - LB URLから自動生成
-- `GCP_PROJECT_ID` - Terraform変数から
-- `GCP_LOCATION` - Terraform変数から
+- `GCP_PROJECT_ID`, `GCP_LOCATION` - Terraform変数から
 
 ## GitHub OAuth App 設定
-1. https://github.com/settings/developers → New OAuth App
-2. 設定値:
-   - Application name: `Job Recommender`
-   - Homepage URL: `https://<LB_IP>.nip.io`
-   - Authorization callback URL: `https://<LB_IP>.nip.io`
-3. Client ID/Secret を Secret Manager に登録:
+Blue/Green環境それぞれに別のOAuth Appが必要（callback URLが異なるため）:
+
+| 環境 | Application name | Callback URL |
+|------|------------------|--------------|
+| Blue | `Job Recommender` | `https://<LB_IP>.nip.io` |
+| Green | `Job Recommender Green` | `https://<LB_IP>.nip.io/green` |
+
+Secret Manager登録:
 ```bash
-echo -n "YOUR_CLIENT_ID" | gcloud secrets create github_oauth_client_id --data-file=-
-echo -n "YOUR_CLIENT_SECRET" | gcloud secrets create github_oauth_client_secret --data-file=-
+# Blue用
+echo -n "CLIENT_ID" | gcloud secrets create github_oauth_client_id --data-file=-
+echo -n "CLIENT_SECRET" | gcloud secrets create github_oauth_client_secret --data-file=-
+
+# Green用
+echo -n "GREEN_CLIENT_ID" | gcloud secrets create green_github_oauth_client_id --data-file=-
+echo -n "GREEN_CLIENT_SECRET" | gcloud secrets create green_github_oauth_client_secret --data-file=-
+```
+
+## Blue-Green Deployment
+| 環境 | Cloud Run | URL | IAM | 用途 |
+|------|-----------|-----|-----|------|
+| Blue | `job-recommender` | `/` | allUsers | 本番 |
+| Green | `job-recommender-green` | `/green/*` | 制限付き | 検証 |
+
+**デプロイフロー:**
+```
+1. イメージビルド → 両環境に反映（同一イメージ）
+2. Green検証: ./scripts/proxy-green.sh または https://<LB>/green
+3. 問題発見時: ./scripts/rollback.sh
+```
+
+**Green環境IAM設定** (`terraform.tfvars`):
+```hcl
+cloud_run_invoker_members = ["user:your-email@gmail.com"]
 ```

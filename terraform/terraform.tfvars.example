@@ -5,3 +5,8 @@ project_id = "your-project-id"
 
 # Optional
 # domain_name = "job-recommender.example.com"
+
+# Cloud Run IAM
+# cloud_run_invoker_members = [
+#   "user:your.name@gmail.com",
+# ]

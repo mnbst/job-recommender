@@ -14,17 +14,17 @@ allowed-tools: Read, Grep, Glob
 3. research.py → Perplexity AIで求人検索+マッチング分析 → JobSearchResult
 ```
 
-## Infrastructure
+## Infrastructure (Blue-Green)
 
 ```
-Internet → Cloud LB (HTTPS) → Serverless NEG → Cloud Run (public)
-                                                     ↓
-                                               VPC Connector → VPC
-                                                     ↓
-                                               Vertex AI / Perplexity AI
+Internet → Cloud LB (HTTPS) → URL Map
+                                 ├── /        → NEG Blue  → Cloud Run (job-recommender)      [本番]
+                                 └── /green/* → NEG Green → Cloud Run (job-recommender-green) [検証]
+                                                                  ↓
+                                                            VPC Connector → Vertex AI / Perplexity AI
 ```
 
-認証: GitHub OAuth（アプリケーションレベル）
+認証: GitHub OAuth（Blue/Green別アプリ）
 
 ## Key Files
 
@@ -40,10 +40,12 @@ Internet → Cloud LB (HTTPS) → Serverless NEG → Cloud Run (public)
 
 | Resource | Purpose |
 |----------|---------|
-| `google_cloud_run_v2_service` | 公開ingress、Streamlitコンテナ |
-| `google_compute_backend_service` | NEG接続 |
-| `google_compute_region_network_endpoint_group` | Serverless NEG |
-| `google_vpc_access_connector` | VPC接続 (10.8.0.0/28) |
+| `google_cloud_run_v2_service.app` | Blue本番（ingress: LB経由のみ、IAM: allUsers） |
+| `google_cloud_run_v2_service.green` | Green検証（ingress: ALL、IAM: 制限付き） |
+| `google_compute_backend_service.app` | Blue用バックエンド |
+| `google_compute_backend_service.green` | Green用バックエンド |
+| `google_compute_region_network_endpoint_group` | Serverless NEG (Blue/Green各1つ) |
+| `google_compute_url_map` | パスベースルーティング（`/green/*`→Green） |
 | `google_artifact_registry_repository` | Dockerイメージ保存 |
 | `google_cloudbuild_trigger` | main Push時の自動ビルド |
 
@@ -84,3 +86,28 @@ main Push → Cloud Build Trigger → Docker Build → Artifact Registry Push
 ### 重要ポイント
 - **service_account必須**: 2nd genリポジトリのTriggerには`service_account`指定が必須（未指定だとエラー400）
 - **データソース非対応**: `google_cloudbuildv2_connection`/`google_cloudbuildv2_repository`のデータソースは未サポート → 変数でID指定
+
+## Blue-Green Deployment
+
+### 環境構成
+| 環境 | Service名 | パス | Ingress | IAM |
+|------|----------|------|---------|-----|
+| Blue | `job-recommender` | `/` | INTERNAL_LOAD_BALANCER | allUsers |
+| Green | `job-recommender-green` | `/green/*` | ALL | 制限付き |
+
+### URL Rewrite
+`/green/foo` → Green環境の `/foo` にリライト（`path_prefix_rewrite = "/"` で `/green` プレフィックスを除去）
+
+### デプロイ検証フロー
+```
+1. Cloud Build → 両環境にイメージ反映
+2. Green検証: gcloud run services proxy job-recommender-green または LB経由 /green
+3. 本番反映: イメージは同一のため自動反映
+4. 問題時: ./scripts/rollback.sh で前リビジョンに戻す
+```
+
+### スクリプト
+| スクリプト | 用途 |
+|-----------|------|
+| `scripts/proxy-green.sh` | ローカルからGreen環境にプロキシ接続 |
+| `scripts/rollback.sh` | Blueの前リビジョンにトラフィック切り替え |
