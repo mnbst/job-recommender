@@ -95,17 +95,59 @@ gcloud run deploy job-recommender --region=asia-northeast1 \
   --image=asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
 ```
 
+### 10. Green環境にアクセスできない (403)
+- **原因**: Green環境はIAM制限付き
+- **確認**:
+```bash
+gcloud run services get-iam-policy job-recommender-green --region=asia-northeast1
+```
+- **対処**: `terraform.tfvars`で`cloud_run_invoker_members`にユーザーを追加
+```hcl
+cloud_run_invoker_members = ["user:your-email@gmail.com"]
+```
+
+### 11. Green環境でOAuth認証が失敗
+- **原因**: Green用のOAuth Appが未設定、または callback URLが不正
+- **確認**: GitHub OAuth App設定で callback URL が `/green` を含むか
+- **対処**:
+  1. GitHub Developer Settings で Green用 OAuth App 作成
+  2. Callback URL: `https://<LB_IP>.nip.io/green`
+  3. Secret Manager に登録:
+```bash
+echo -n "GREEN_CLIENT_ID" | gcloud secrets create green_github_oauth_client_id --data-file=-
+echo -n "GREEN_CLIENT_SECRET" | gcloud secrets create green_github_oauth_client_secret --data-file=-
+```
+
+### 12. デプロイ後に問題発生、ロールバックしたい
+- **対処**: 前リビジョンにトラフィックを切り替え
+```bash
+./scripts/rollback.sh
+# または手動で
+gcloud run services update-traffic job-recommender \
+  --region=asia-northeast1 \
+  --to-revisions=<previous-revision>=100
+```
+
 ## Useful Commands
 
 ```bash
-# Cloud Runログ
-gcloud logging read "resource.type=cloud_run_revision" --limit=50
+# Cloud Runログ (Blue)
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=job-recommender" --limit=50
+
+# Cloud Runログ (Green)
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=job-recommender-green" --limit=50
 
 # LBログ
 gcloud logging read "resource.type=http_load_balancer" --limit=50
 
-# IAP設定確認
-gcloud iap web get-iam-policy --resource-type=backend-services --service=<backend-name>
+# Green環境にローカルプロキシ
+./scripts/proxy-green.sh  # http://localhost:8080 でアクセス
+
+# ロールバック
+./scripts/rollback.sh
+
+# リビジョン一覧確認
+gcloud run revisions list --service=job-recommender --region=asia-northeast1
 
 # ローカルテスト
 uv run streamlit run app.py

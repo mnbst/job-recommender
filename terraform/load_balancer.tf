@@ -22,6 +22,17 @@ resource "google_compute_region_network_endpoint_group" "cloudrun_neg" {
   }
 }
 
+# Serverless NEG (Green)
+resource "google_compute_region_network_endpoint_group" "cloudrun_green_neg" {
+  name                  = "job-recommender-green-neg-v2"
+  region                = var.region
+  network_endpoint_type = "SERVERLESS"
+
+  cloud_run {
+    service = google_cloud_run_v2_service.green.name
+  }
+}
+
 # Backend Service (Blue - Production)
 resource "google_compute_backend_service" "app" {
   name                  = "job-recommender-backend"
@@ -41,10 +52,50 @@ resource "google_compute_backend_service" "app" {
   }
 }
 
+# Backend Service (Green)
+resource "google_compute_backend_service" "green" {
+  name                  = "job-recommender-green-backend"
+  protocol              = "HTTPS"
+  port_name             = "http"
+  timeout_sec           = 30
+  enable_cdn            = false
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  backend {
+    group = google_compute_region_network_endpoint_group.cloudrun_green_neg.id
+  }
+
+  log_config {
+    enable      = true
+    sample_rate = 1.0
+  }
+}
+
 # URL Map
 resource "google_compute_url_map" "app" {
   name            = "job-recommender-url-map"
   default_service = google_compute_backend_service.app.id
+
+  host_rule {
+    hosts        = ["*"]
+    path_matcher = "app-paths"
+  }
+
+  path_matcher {
+    name            = "app-paths"
+    default_service = google_compute_backend_service.app.id
+
+    path_rule {
+      paths   = ["/green", "/green/*"]
+      service = google_compute_backend_service.green.id
+
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/"
+        }
+      }
+    }
+  }
 }
 
 # SSL証明書（Google管理）
@@ -122,4 +173,3 @@ output "artifact_registry_url" {
   description = "Artifact Registry URL for docker push"
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.app.repository_id}"
 }
-
