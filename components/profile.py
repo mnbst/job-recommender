@@ -16,11 +16,18 @@ from services.github import (
 )
 from services.profile import generate_profile
 from services.quota import QuotaStatus, consume_credit
-from services.session_keys import JOB_RESULTS
+from services.session_keys import (
+    JOB_RESULTS,
+    PROFILE_STATE,
+    REGEN_REPO_METADATA_LIST,
+    REGEN_SELECTED_REPOS,
+    REPO_METADATA_LIST,
+    SELECTED_REPOS,
+)
 
 # セッションキー
-REPO_METADATA_KEY = "repo_metadata_list"
-SELECTED_REPOS_KEY = "selected_repos"
+REPO_METADATA_KEY = REPO_METADATA_LIST
+SELECTED_REPOS_KEY = SELECTED_REPOS
 
 
 def display_profile(profile: dict) -> None:
@@ -129,7 +136,7 @@ def profile_section(
 
     if cached_profile:
         display_profile(cached_profile)
-        st.session_state["profile"] = cached_profile
+        st.session_state[PROFILE_STATE] = cached_profile
 
         # 再生成UI
         with st.expander("プロファイルを再生成"):
@@ -179,11 +186,11 @@ def _regenerate_profile(user_id: int, user_login: str, repo_names: list[str]) ->
     consume_credit(user_id)
     invalidate_repos_cache(user_id)
     invalidate_profile_cache(user_id)
-    st.session_state.pop("profile", None)
+    st.session_state.pop(PROFILE_STATE, None)
     st.session_state.pop(JOB_RESULTS, None)
     # セレクター状態をクリア
-    st.session_state.pop(f"regen_{REPO_METADATA_KEY}", None)
-    st.session_state.pop(f"regen_{SELECTED_REPOS_KEY}", None)
+    st.session_state.pop(REGEN_REPO_METADATA_LIST, None)
+    st.session_state.pop(REGEN_SELECTED_REPOS, None)
 
     with st.spinner("プロファイルを再生成中..."):
         repos = analyze_selected_repos(user_login, repo_names)
@@ -196,7 +203,7 @@ def _regenerate_profile(user_id: int, user_login: str, repo_names: list[str]) ->
                 profile_data=profile,
                 repo_count=len(repos),
             )
-            st.session_state["profile"] = profile
+            st.session_state[PROFILE_STATE] = profile
         else:
             st.error("リポジトリの分析に失敗しました")
         st.rerun()
@@ -220,7 +227,7 @@ def _generate_profile(user_id: int, user_login: str, repo_names: list[str]) -> N
                 profile_data=profile,
                 repo_count=len(repos),
             )
-            st.session_state["profile"] = profile
+            st.session_state[PROFILE_STATE] = profile
         else:
             st.error("リポジトリの分析に失敗しました")
         st.rerun()
