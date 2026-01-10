@@ -176,9 +176,7 @@ def profile_section(
     return None
 
 
-def _regenerate_profile(
-    user_id: int, user_login: str, repo_names: list[str]
-) -> None:
+def _regenerate_profile(user_id: int, user_login: str, repo_names: list[str]) -> None:
     """プロファイルを再生成."""
     consume_credit(user_id)
     invalidate_repos_cache(user_id)
@@ -206,9 +204,7 @@ def _regenerate_profile(
         st.rerun()
 
 
-def _generate_profile(
-    user_id: int, user_login: str, repo_names: list[str]
-) -> None:
+def _generate_profile(user_id: int, user_login: str, repo_names: list[str]) -> None:
     """プロファイルを新規生成."""
     consume_credit(user_id)
     # セレクター状態をクリア
