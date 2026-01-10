@@ -21,7 +21,6 @@
 ## Phase 2: 機能拡充
 
 ### Step 1: プロファイル生成改善
-- [x] 分析対象リポジトリの選択機能
 - [ ] モデル変更検討（gemini-2.5-flash → claude-opus-4 or claude-sonnet-4）
 
 ### Step 2: 求人検索改善
@@ -68,7 +67,7 @@
 - [ ] アラート設定
 
 ### Step 3: デプロイ改善
-- [ ] Blue-Green デプロイ対応
+- [x] Blue-Green デプロイ対応
 - [ ] 構造化ログ実装
 
 ---
@@ -77,6 +76,7 @@
 - [x] 一般公開対応（IAP削除）
 - [x] terraform.tfvars の機密情報保護
 - [x] リポジトリ絞り込み機能
+- [x] Blue-Green デプロイ対応（パスベースルーティング、Green用OAuth、ロールバックスクリプト）
 
 ---
 

@@ -8,15 +8,38 @@
 # 4. リンクしたリポジトリの詳細ページでリポジトリIDをコピー
 #    (形式: projects/{project}/locations/{region}/connections/{connection}/repositories/{repo})
 
+# Blue環境（本番）: mainブランチにマージ時
 resource "google_cloudbuild_trigger" "main_push" {
   name        = "job-recommender-main-push"
-  description = "Build and push image on main branch push"
+  description = "Deploy to production (blue) on main branch push"
   location    = var.region
 
   repository_event_config {
     repository = var.cloudbuild_repository_id
     push {
       branch = "^main$"
+    }
+  }
+
+  filename        = "cloudbuild.yaml"
+  service_account = "projects/${var.project_id}/serviceAccounts/${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+
+  substitutions = {
+    _REGION    = var.region
+    _REPO_NAME = google_artifact_registry_repository.app.repository_id
+  }
+}
+
+# Green環境（検証）: devブランチにプッシュ時
+resource "google_cloudbuild_trigger" "dev_push" {
+  name        = "job-recommender-dev-push"
+  description = "Deploy to staging (green) on dev branch push"
+  location    = var.region
+
+  repository_event_config {
+    repository = var.cloudbuild_repository_id
+    push {
+      branch = "^dev$"
     }
   }
 
