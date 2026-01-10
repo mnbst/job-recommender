@@ -64,7 +64,7 @@ steps:
           --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA} \
           --region=${_REGION} \
           --platform=managed \
-          $DEPLOY_OPTS
+          $$DEPLOY_OPTS
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA}'
