@@ -12,6 +12,7 @@ import streamlit as st
 from pydantic import BaseModel
 
 from services.const import GITHUB_AUTHORIZE_URL, GITHUB_TOKEN_URL, GITHUB_USER_URL
+from services.logging_config import log_structured
 from services.session_keys import (
     ACCESS_TOKEN,
     EMPLOYMENT_TYPE,
@@ -200,7 +201,12 @@ def revoke_github_token(access_token: str) -> None:
         )
     except Exception:
         # 取り消し失敗は無視（ローカルログアウトは続行）
-        pass
+        log_structured(
+            logger,
+            "Failed to revoke GitHub token",
+            level=logging.ERROR,
+            exc_info=True,
+        )
 
 
 def logout(cookie_manager: stx.CookieManager | None = None) -> None:

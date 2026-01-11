@@ -1,5 +1,6 @@
 """Session persistence service using Firestore and Cookies."""
 
+import logging
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -16,6 +17,9 @@ from services.const import (
     SESSION_COOKIE_NAME,
     SESSION_TTL_DAYS,
 )
+from services.logging_config import log_structured
+
+logger = logging.getLogger(__name__)
 
 
 def get_cookie_manager() -> stx.CookieManager:
@@ -102,6 +106,13 @@ def get_firestore_session(session_id: str) -> dict[str, Any] | None:
 
         return data
     except Exception:
+        log_structured(
+            logger,
+            "Failed to fetch session",
+            level=logging.ERROR,
+            exc_info=True,
+            session_id=session_id,
+        )
         return None
 
 
@@ -141,7 +152,13 @@ def save_firestore_session(
         )
     except Exception:
         # 保存失敗は無視（セッション永続化は必須ではない）
-        pass
+        log_structured(
+            logger,
+            "Failed to save session",
+            level=logging.ERROR,
+            exc_info=True,
+            session_id=session_id,
+        )
 
 
 def update_session_last_accessed(session_id: str) -> None:
@@ -155,7 +172,13 @@ def update_session_last_accessed(session_id: str) -> None:
         doc_ref = db.collection("sessions").document(session_id)
         doc_ref.update({"last_accessed_at": datetime.now(UTC)})
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to update session last_accessed_at",
+            level=logging.ERROR,
+            exc_info=True,
+            session_id=session_id,
+        )
 
 
 def delete_firestore_session(session_id: str) -> None:
@@ -169,7 +192,13 @@ def delete_firestore_session(session_id: str) -> None:
         doc_ref = db.collection("sessions").document(session_id)
         doc_ref.delete()
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to delete session",
+            level=logging.ERROR,
+            exc_info=True,
+            session_id=session_id,
+        )
 
 
 def generate_session_id() -> str:
