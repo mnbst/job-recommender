@@ -42,7 +42,6 @@ restore_session(cookie_manager)
 # OAuthコールバック処理
 handle_oauth_callback(cookie_manager)
 
-
 # リダイレクトURI（localhost経由の場合は動的に設定）
 def get_redirect_uri() -> str:
     """リクエストのホストに基づいてredirect_uriを決定."""
@@ -57,8 +56,10 @@ def get_redirect_uri() -> str:
     return os.environ.get("OAUTH_REDIRECT_URI", "http://localhost:8501")
 
 
-# Sidebar（redirect_uriはリクエストごとに動的に取得）
-render_sidebar(cookie_manager, get_redirect_uri())
+REDIRECT_URI = get_redirect_uri()
+
+# Sidebar
+render_sidebar(cookie_manager, REDIRECT_URI)
 
 # Navigation
 pages = {
