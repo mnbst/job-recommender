@@ -42,6 +42,7 @@ restore_session(cookie_manager)
 # OAuthコールバック処理
 handle_oauth_callback(cookie_manager)
 
+
 # リダイレクトURI（localhost経由の場合は動的に設定）
 def get_redirect_uri() -> str:
     """リクエストのホストに基づいてredirect_uriを決定."""
