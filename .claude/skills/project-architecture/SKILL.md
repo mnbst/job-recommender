@@ -17,14 +17,14 @@ allowed-tools: Read, Grep, Glob
 ## Infrastructure (Blue-Green)
 
 ```
-Internet → Cloud LB (HTTPS) → URL Map
-                                 ├── /        → NEG Blue  → Cloud Run (job-recommender)      [本番]
-                                 └── /green/* → NEG Green → Cloud Run (job-recommender-green) [検証]
-                                                                  ↓
-                                                            VPC Connector → Vertex AI / Perplexity AI
+Internet → Cloud LB (HTTPS) → Cloud Run (job-recommender) [本番/Blue]
+                                        ↓
+                                  VPC Connector → Vertex AI / Perplexity AI
+
+Local Dev → IAM認証プロキシ → Cloud Run (job-recommender-green) [検証/Green]
 ```
 
-認証: GitHub OAuth（Blue/Green別アプリ）
+認証: GitHub OAuth（Blue/Green別アプリ、GreenはローカルCallback）
 
 ## Key Files
 
@@ -43,11 +43,10 @@ Internet → Cloud LB (HTTPS) → URL Map
 | `google_cloud_run_v2_service.app` | Blue本番（ingress: LB経由のみ、IAM: allUsers） |
 | `google_cloud_run_v2_service.green` | Green検証（ingress: ALL、IAM: 制限付き） |
 | `google_compute_backend_service.app` | Blue用バックエンド |
-| `google_compute_backend_service.green` | Green用バックエンド |
-| `google_compute_region_network_endpoint_group` | Serverless NEG (Blue/Green各1つ) |
-| `google_compute_url_map` | パスベースルーティング（`/green/*`→Green） |
+| `google_compute_region_network_endpoint_group` | Serverless NEG (Blue用) |
+| `google_compute_url_map` | LBルーティング（Blue環境のみ） |
 | `google_artifact_registry_repository` | Dockerイメージ保存 |
-| `google_cloudbuild_trigger` | main Push時の自動ビルド |
+| `google_cloudbuild_trigger` | main/dev Push時の自動ビルド |
 
 ## CI/CD (Cloud Build)
 
@@ -90,24 +89,21 @@ main Push → Cloud Build Trigger → Docker Build → Artifact Registry Push
 ## Blue-Green Deployment
 
 ### 環境構成
-| 環境 | Service名 | パス | Ingress | IAM |
-|------|----------|------|---------|-----|
-| Blue | `job-recommender` | `/` | INTERNAL_LOAD_BALANCER | allUsers |
-| Green | `job-recommender-green` | `/green/*` | ALL | 制限付き |
-
-### URL Rewrite
-`/green/foo` → Green環境の `/foo` にリライト（`path_prefix_rewrite = "/"` で `/green` プレフィックスを除去）
+| 環境 | Service名 | アクセス方法 | Ingress | IAM |
+|------|----------|-------------|---------|-----|
+| Blue | `job-recommender` | LB経由 | INTERNAL_LOAD_BALANCER | allUsers |
+| Green | `job-recommender-green` | ローカルプロキシ | ALL | 制限付き |
 
 ### デプロイ検証フロー
 ```
-1. Cloud Build → 両環境にイメージ反映
-2. Green検証: gcloud run services proxy job-recommender-green または LB経由 /green
-3. 本番反映: イメージは同一のため自動反映
+1. devブランチにpush → Cloud BuildでGreen環境にデプロイ
+2. Green検証: ./scripts/proxy-green.sh でローカルからIAM認証でアクセス
+3. 問題なければmainにマージ → Blue環境にデプロイ
 4. 問題時: ./scripts/rollback.sh で前リビジョンに戻す
 ```
 
 ### スクリプト
 | スクリプト | 用途 |
 |-----------|------|
-| `scripts/proxy-green.sh` | ローカルからGreen環境にプロキシ接続 |
+| `scripts/proxy-green.sh` | ローカルからGreen環境にプロキシ接続（IAM認証） |
 | `scripts/rollback.sh` | Blueの前リビジョンにトラフィック切り替え |

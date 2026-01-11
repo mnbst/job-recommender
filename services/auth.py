@@ -282,28 +282,6 @@ def render_login_button(redirect_uri: str) -> None:
     st.link_button("GitHubでログイン", auth_url, use_container_width=True)
 
 
-def render_user_info(cookie_manager: stx.CookieManager | None = None) -> None:
-    """認証済みユーザー情報を表示.
-
-    Args:
-        cookie_manager: CookieManager（ログアウト時のセッション削除用）
-    """
-    user = get_current_user()
-    if not user:
-        return
-
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        st.image(user.avatar_url, width=50)
-    with col2:
-        st.write(f"**{user.name or user.login}**")
-        st.write(f"@{user.login}")
-
-    if st.button("ログアウト", type="secondary"):
-        logout(cookie_manager)
-        st.rerun()
-
-
 def restore_session(cookie_manager: stx.CookieManager) -> bool:
     """Cookieからセッションを復元.
 

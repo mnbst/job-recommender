@@ -108,10 +108,10 @@ cloud_run_invoker_members = ["user:your-email@gmail.com"]
 
 ### 11. Green環境でOAuth認証が失敗
 - **原因**: Green用のOAuth Appが未設定、または callback URLが不正
-- **確認**: GitHub OAuth App設定で callback URL が `/green` を含むか
+- **確認**: GitHub OAuth App設定で callback URL が `http://localhost:8080` か確認
 - **対処**:
   1. GitHub Developer Settings で Green用 OAuth App 作成
-  2. Callback URL: `https://<LB_IP>.nip.io/green`
+  2. Callback URL: `http://localhost:8080`（ローカルプロキシ用）
   3. Secret Manager に登録:
 ```bash
 echo -n "GREEN_CLIENT_ID" | gcloud secrets create green_github_oauth_client_id --data-file=-
