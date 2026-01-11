@@ -345,10 +345,10 @@ def delete_all_user_data(user_id: str) -> None:
     Args:
         user_id: GitHubUser.id（文字列）
     """
-    try:
-        db = get_firestore_client()
-        collections = ["profiles", "repos", "settings"]
-        for collection in collections:
+    db = get_firestore_client()
+    collections = ["profiles", "repos", "settings"]
+    for collection in collections:
+        try:
             db.collection(collection).document(user_id).delete()
-    except Exception:
-        pass
+        except Exception:
+            pass
