@@ -109,7 +109,7 @@ Blue/Green環境それぞれに別のOAuth Appが必要（callback URLが異な�
 | 環境 | Application name | Callback URL |
 |------|------------------|--------------|
 | Blue | `Job Recommender` | `https://<LB_IP>.nip.io` |
-| Green | `Job Recommender Green` | `https://<LB_IP>.nip.io/green` |
+| Green | `Job Recommender Green` | `http://localhost:8080`（ローカルプロキシ用） |
 
 Secret Manager登録:
 ```bash
@@ -123,16 +123,17 @@ echo -n "GREEN_CLIENT_SECRET" | gcloud secrets create green_github_oauth_client_
 ```
 
 ## Blue-Green Deployment
-| 環境 | Cloud Run | URL | IAM | 用途 |
-|------|-----------|-----|-----|------|
-| Blue | `job-recommender` | `/` | allUsers | 本番 |
-| Green | `job-recommender-green` | `/green/*` | 制限付き | 検証 |
+| 環境 | Cloud Run | アクセス方法 | IAM | 用途 |
+|------|-----------|-------------|-----|------|
+| Blue | `job-recommender` | LB経由 (`https://<domain>`) | allUsers | 本番 |
+| Green | `job-recommender-green` | ローカルプロキシ (`./scripts/proxy-green.sh`) | 制限付き | 検証 |
 
 **デプロイフロー:**
 ```
-1. イメージビルド → 両環境に反映（同一イメージ）
-2. Green検証: ./scripts/proxy-green.sh または https://<LB>/green
-3. 問題発見時: ./scripts/rollback.sh
+1. devブランチにpush → Cloud BuildでGreen環境にデプロイ
+2. Green検証: ./scripts/proxy-green.sh でローカルからIAM認証でアクセス
+3. 問題なければmainにマージ → Blue環境にデプロイ
+4. 問題発見時: ./scripts/rollback.sh
 ```
 
 **Green環境IAM設定** (`terraform.tfvars`):

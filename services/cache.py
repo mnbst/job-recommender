@@ -300,11 +300,6 @@ def get_user_settings(user_id: int) -> UserSettings:
     return settings
 
 
-def invalidate_settings_session_cache() -> None:
-    """ユーザー設定のsession_stateキャッシュを無効化."""
-    st.session_state.pop(USER_SETTINGS, None)
-
-
 def save_user_settings(user_id: int, settings: UserSettings) -> None:
     """ユーザー設定を保存.
 
