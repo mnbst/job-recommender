@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
@@ -36,6 +37,8 @@ from services.session_keys import (
 
 if TYPE_CHECKING:
     import extra_streamlit_components as stx
+
+logger = logging.getLogger(__name__)
 
 
 class GitHubUser(BaseModel):
@@ -206,10 +209,15 @@ def logout(cookie_manager: stx.CookieManager | None = None) -> None:
     Args:
         cookie_manager: CookieManager（セッション削除用、Noneの場合はローカルのみクリア）
     """
+    user = st.session_state.get(USER)
+    user_id = user.id if user else None
+    logger.info("Logout started: user_id=%s", user_id)
+
     # GitHubトークンの取り消し（別アカウントでのログインを可能にする）
     access_token = st.session_state.get(ACCESS_TOKEN)
     if access_token:
         revoke_github_token(access_token)
+        logger.info("GitHub token revoked: user_id=%s", user_id)
 
     # 永続化セッションの削除
     session_id = st.session_state.get(SESSION_ID)
@@ -223,13 +231,17 @@ def logout(cookie_manager: stx.CookieManager | None = None) -> None:
 
         delete_firestore_session(session_id)
         delete_session_cookie(cookie_manager)
+        logger.info("Session deleted: user_id=%s, session_id=%s", user_id, session_id)
 
     # Firestoreからユーザーデータを削除（creditsは維持）
-    user = st.session_state.get(USER)
     if user:
         from services.cache import delete_all_user_data
 
         delete_all_user_data(str(user.id))
+        logger.info(
+            "User data deleted from Firestore: user_id=%s (profiles, repos, settings)",
+            user_id,
+        )
 
     # 認証情報 + ユーザー固有キャッシュ/状態をまとめてクリア
     keys_to_clear = [
@@ -254,6 +266,8 @@ def logout(cookie_manager: stx.CookieManager | None = None) -> None:
 
     for key in (PROFILE, USER_SETTINGS, QUOTA_STATUS, JOB_RESULTS, JOB_PREFERENCES):
         st.session_state.pop(key, None)
+
+    logger.info("Logout completed: user_id=%s", user_id)
 
 
 def render_login_button(redirect_uri: str) -> None:
