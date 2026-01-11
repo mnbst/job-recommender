@@ -276,7 +276,7 @@ resource "google_cloud_run_v2_service" "green" {
 
       env {
         name  = "OAUTH_REDIRECT_URI"
-        value = var.domain_name != "" ? "https://${var.domain_name}" : "https://${google_compute_global_address.lb_ip.address}.nip.io"
+        value = var.domain_name != "" ? "https://${var.domain_name}/green" : "https://${google_compute_global_address.lb_ip.address}.nip.io/green"
       }
     }
 
