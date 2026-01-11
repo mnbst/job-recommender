@@ -182,6 +182,11 @@ resource "google_cloud_run_v2_service" "app" {
     }
 
     max_instance_request_concurrency = 80
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 10
+    }
   }
 
   traffic {
@@ -276,6 +281,11 @@ resource "google_cloud_run_v2_service" "green" {
     }
 
     max_instance_request_concurrency = 80
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 10
+    }
   }
 
   traffic {
