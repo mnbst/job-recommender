@@ -224,6 +224,13 @@ def logout(cookie_manager: stx.CookieManager | None = None) -> None:
         delete_firestore_session(session_id)
         delete_session_cookie(cookie_manager)
 
+    # Firestoreからユーザーデータを削除（creditsは維持）
+    user = st.session_state.get(USER)
+    if user:
+        from services.cache import delete_all_user_data
+
+        delete_all_user_data(str(user.id))
+
     # 認証情報 + ユーザー固有キャッシュ/状態をまとめてクリア
     keys_to_clear = [
         USER,
