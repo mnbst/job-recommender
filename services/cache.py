@@ -334,3 +334,21 @@ def save_user_settings(user_id: int, settings: UserSettings) -> None:
         st.session_state[USER_SETTINGS] = settings
     except Exception:
         pass
+
+
+def delete_all_user_data(user_id: str) -> None:
+    """指定ユーザーのすべてのキャッシュデータを削除.
+
+    ログアウト時に呼び出され、profiles, repos, settingsを削除する。
+    creditsは維持される（再ログイン時に引き継ぎ可能）。
+
+    Args:
+        user_id: GitHubUser.id（文字列）
+    """
+    try:
+        db = get_firestore_client()
+        collections = ["profiles", "repos", "settings"]
+        for collection in collections:
+            db.collection(collection).document(user_id).delete()
+    except Exception:
+        pass
