@@ -1,11 +1,16 @@
 """GitHub API integration for repository analysis."""
 
+import logging
 import os
 
 from github import Github
 from github.ContentFile import ContentFile
 from github.Repository import Repository
 from pydantic import BaseModel, Field
+
+from services.logging_config import log_structured
+
+logger = logging.getLogger(__name__)
 
 # 依存ファイルのパターン
 DEPENDENCY_FILES = [
@@ -145,7 +150,14 @@ def get_repos_by_names(username: str, repo_names: list[str]) -> list[Repository]
             repo = client.get_repo(f"{username}/{name}")
             repos.append(repo)
         except Exception:
-            pass
+            log_structured(
+                logger,
+                "Failed to fetch repo",
+                level=logging.ERROR,
+                exc_info=True,
+                username=username,
+                repo=name,
+            )
     return repos
 
 
@@ -177,9 +189,21 @@ def get_repo_structure(repo: Repository, max_depth: int = 2) -> list[str]:
                     if isinstance(sub_contents, list):
                         queue.extend((sub, depth + 1) for sub in sub_contents)
                 except Exception:
-                    pass
+                    log_structured(
+                        logger,
+                        "Failed to read directory",
+                        level=logging.ERROR,
+                        exc_info=True,
+                        path=item.path,
+                    )
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to get repo structure",
+            level=logging.ERROR,
+            exc_info=True,
+            repo=repo.full_name,
+        )
 
     return files
 
@@ -199,7 +223,13 @@ def get_file_content(repo: Repository, path: str) -> str | None:
         if isinstance(file, ContentFile):
             return file.decoded_content.decode("utf-8")
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to read file",
+            level=logging.ERROR,
+            exc_info=True,
+            path=path,
+        )
     return None
 
 
@@ -288,7 +318,13 @@ def extract_repo_info(repo: Repository) -> RepoInfo:
         readme_file = repo.get_readme()
         readme = readme_file.decoded_content.decode("utf-8")
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to read README",
+            level=logging.ERROR,
+            exc_info=True,
+            repo=repo.full_name,
+        )
 
     # Get languages
     languages = dict(repo.get_languages())
