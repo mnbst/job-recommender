@@ -42,14 +42,22 @@ restore_session(cookie_manager)
 # OAuthコールバック処理
 handle_oauth_callback(cookie_manager)
 
-# リダイレクトURI（本番環境ではCloud RunのURL）
-REDIRECT_URI = os.environ.get(
-    "OAUTH_REDIRECT_URI",
-    "http://localhost:8501",
-)
+# リダイレクトURI（localhost経由の場合は動的に設定）
+def get_redirect_uri() -> str:
+    """リクエストのホストに基づいてredirect_uriを決定."""
+    # Streamlitのcontext からホスト情報を取得
+    try:
+        host_header = st.context.headers.get("Host", "")
+        if host_header.startswith("localhost"):
+            return f"http://{host_header}"
+    except Exception:
+        pass
+    # デフォルトは環境変数
+    return os.environ.get("OAUTH_REDIRECT_URI", "http://localhost:8501")
 
-# Sidebar
-render_sidebar(cookie_manager, REDIRECT_URI)
+
+# Sidebar（redirect_uriはリクエストごとに動的に取得）
+render_sidebar(cookie_manager, get_redirect_uri())
 
 # Navigation
 pages = {
