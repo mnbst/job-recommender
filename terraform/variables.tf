@@ -37,3 +37,12 @@ variable "cloud_run_invoker_members" {
   type        = list(string)
   default     = []
 }
+
+# ============================================
+# Monitoring Variables
+# ============================================
+variable "alert_email" {
+  description = "Email address for build notifications"
+  type        = string
+  default     = ""
+}

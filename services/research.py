@@ -110,7 +110,8 @@ def build_search_prompt(
 
     return f"""You are a job search assistant.{exclude_text}
 
-Search the web and find up to 3 job postings that match the following criteria:
+Search the web and find EXACTLY 3 job postings that match the following criteria.
+IMPORTANT: You MUST return exactly 3 recommendations. Do not return fewer than 3.
 - Role: {", ".join(roles) if roles else "Software Engineer"}
 - Skills: {", ".join(skills) if skills else "any"}
 - Keywords: {keywords_text}
@@ -219,6 +220,8 @@ def search_jobs(
                         "properties": {
                             "recommendations": {
                                 "type": "array",
+                                "minItems": 3,
+                                "maxItems": 3,
                                 "items": {
                                     "type": "object",
                                     "properties": {
