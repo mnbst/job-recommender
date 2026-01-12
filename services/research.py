@@ -7,6 +7,8 @@ import os
 from perplexity import Perplexity
 from pydantic import BaseModel
 
+from services.logging_config import log_structured
+
 logger = logging.getLogger(__name__)
 
 
@@ -200,12 +202,7 @@ def search_jobs(
     }
 
     # Cloud Run環境では構造化ログ、ローカルでは整形して出力
-    if os.environ.get("K_SERVICE"):
-        logger.info(
-            "求人検索開始", extra={"json_fields": {"search_params": search_params}}
-        )
-    else:
-        logger.info(f"求人検索開始: {json.dumps(search_params, ensure_ascii=False)}")
+    log_structured(logger, "求人検索開始", search_params=search_params)
 
     try:
         client = Perplexity()
@@ -307,6 +304,13 @@ def search_jobs(
         return JobSearchResult(recommendations=recommendations, status="success")
 
     except Exception as e:
+        log_structured(
+            logger,
+            "Job search failed",
+            level=logging.ERROR,
+            exc_info=True,
+            error=str(e),
+        )
         return JobSearchResult(
             recommendations=[],
             status="error",
@@ -401,4 +405,11 @@ If you cannot find any relevant URL, return {{"job_url": null}}
         return JobUrlResult(url=None, status="not_found")
 
     except Exception as e:
+        log_structured(
+            logger,
+            "Job URL search failed",
+            level=logging.ERROR,
+            exc_info=True,
+            error=str(e),
+        )
         return JobUrlResult(url=None, status="error", error=str(e))

@@ -1,5 +1,6 @@
 """Firestore cache service for developer profiles and repositories."""
 
+import logging
 import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -11,7 +12,10 @@ from pydantic import BaseModel, Field
 
 from services.const import CACHE_TTL_DAYS
 from services.github import FileContent, RepoInfo
+from services.logging_config import log_structured
 from services.session_keys import PROFILE, USER_SETTINGS
+
+logger = logging.getLogger(__name__)
 
 
 def get_firestore_client() -> firestore.Client:
@@ -48,6 +52,13 @@ def _fetch_cached_profile(user_id: int, repo_count: int) -> dict[str, Any] | Non
 
         return data.get("profile_data")
     except Exception:
+        log_structured(
+            logger,
+            "Failed to fetch cached profile",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
         return None
 
 
@@ -118,7 +129,13 @@ def save_profile_cache(
         # session_stateキャッシュを更新
         st.session_state[PROFILE] = profile_data
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to save profile cache",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
 
 
 def invalidate_profile_cache(user_id: int) -> None:
@@ -129,7 +146,13 @@ def invalidate_profile_cache(user_id: int) -> None:
         doc_ref.delete()
         invalidate_profile_session_cache()
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to invalidate profile cache",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
 
 
 def get_cached_repos(user_id: int, repo_count: int) -> list[RepoInfo] | None:
@@ -170,6 +193,13 @@ def get_cached_repos(user_id: int, repo_count: int) -> list[RepoInfo] | None:
         repos_data = data.get("repos", [])
         return [_dict_to_repo_info(r) for r in repos_data]
     except Exception:
+        log_structured(
+            logger,
+            "Failed to fetch cached repos",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
         return None
 
 
@@ -198,7 +228,13 @@ def save_repos_cache(
             }
         )
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to save repos cache",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
 
 
 def invalidate_repos_cache(user_id: int) -> None:
@@ -208,7 +244,13 @@ def invalidate_repos_cache(user_id: int) -> None:
         doc_ref = db.collection("repos").document(str(user_id))
         doc_ref.delete()
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to invalidate repos cache",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
 
 
 def _dict_to_repo_info(data: dict[str, Any]) -> RepoInfo:
@@ -278,6 +320,13 @@ def _fetch_user_settings(user_id: int) -> UserSettings:
             plan=data.get("plan", "free"),
         )
     except Exception:
+        log_structured(
+            logger,
+            "Failed to fetch user settings",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
         return UserSettings()
 
 
@@ -298,11 +347,6 @@ def get_user_settings(user_id: int) -> UserSettings:
     settings = _fetch_user_settings(user_id)
     st.session_state[USER_SETTINGS] = settings
     return settings
-
-
-def invalidate_settings_session_cache() -> None:
-    """ユーザー設定のsession_stateキャッシュを無効化."""
-    st.session_state.pop(USER_SETTINGS, None)
 
 
 def save_user_settings(user_id: int, settings: UserSettings) -> None:
@@ -333,4 +377,35 @@ def save_user_settings(user_id: int, settings: UserSettings) -> None:
         # session_stateキャッシュを更新
         st.session_state[USER_SETTINGS] = settings
     except Exception:
-        pass
+        log_structured(
+            logger,
+            "Failed to save user settings",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
+
+
+def delete_all_user_data(user_id: str) -> None:
+    """指定ユーザーのすべてのキャッシュデータを削除.
+
+    ログアウト時に呼び出され、profiles, repos, settingsを削除する。
+    creditsは維持される（再ログイン時に引き継ぎ可能）。
+
+    Args:
+        user_id: GitHubUser.id（文字列）
+    """
+    db = get_firestore_client()
+    collections = ["profiles", "repos", "settings"]
+    for collection in collections:
+        try:
+            db.collection(collection).document(user_id).delete()
+        except Exception:
+            log_structured(
+                logger,
+                "Failed to delete user data",
+                level=logging.ERROR,
+                exc_info=True,
+                user_id=user_id,
+                collection=collection,
+            )

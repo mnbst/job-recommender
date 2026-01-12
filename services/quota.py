@@ -1,5 +1,6 @@
 """Freemium quota management service（共通クレジット制）."""
 
+import logging
 from datetime import UTC, datetime
 
 import streamlit as st
@@ -10,7 +11,10 @@ from pydantic import BaseModel
 
 from services.cache import get_firestore_client
 from services.const import FREE_PLAN_INITIAL_CREDITS
+from services.logging_config import log_structured
 from services.session_keys import QUOTA_STATUS
+
+logger = logging.getLogger(__name__)
 
 
 class QuotaStatus(BaseModel):
@@ -32,6 +36,13 @@ def _get_credits_data(user_id: int) -> dict | None:
 
         return doc.to_dict()
     except Exception:
+        log_structured(
+            logger,
+            "Failed to fetch credits data",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
         return None
 
 
@@ -54,9 +65,22 @@ def _init_credits(user_id: int) -> dict:
         return data
     except AlreadyExists:
         # 既に存在する場合は現在の値を返す
+        log_structured(
+            logger,
+            "Credits already initialized",
+            level=logging.INFO,
+            user_id=user_id,
+        )
         doc: DocumentSnapshot = doc_ref.get()  # type: ignore[assignment]
         return doc.to_dict() or data
     except Exception:
+        log_structured(
+            logger,
+            "Failed to init credits",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
         return {"credits": FREE_PLAN_INITIAL_CREDITS}
 
 
@@ -164,6 +188,13 @@ def consume_credit(user_id: int) -> bool:
         )
         return True
     except Exception:
+        log_structured(
+            logger,
+            "Failed to consume credit",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
         return False
 
 
@@ -230,4 +261,11 @@ def add_credits(user_id: int, amount: int) -> bool:
         )
         return True
     except Exception:
+        log_structured(
+            logger,
+            "Failed to add credits",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
         return False
