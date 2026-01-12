@@ -47,7 +47,7 @@ steps:
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app'
 
   # Deploy to Cloud Run
-  # main branch → blue (production), other branches → green (staging)
+  # main branch → blue (production), dev branch → green (staging)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
@@ -56,9 +56,12 @@ steps:
         if [ "$BRANCH_NAME" = "main" ]; then
           echo "Deploying to BLUE (production)..."
           DEPLOY_OPTS=""
-        else
+        elif [ "$BRANCH_NAME" = "dev" ]; then
           echo "Deploying to GREEN (staging)..."
           DEPLOY_OPTS="--no-traffic --tag=green"
+        else
+          echo "Skipping deploy for branch: $BRANCH_NAME"
+          exit 0
         fi
         gcloud run deploy job-recommender \
           --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA} \

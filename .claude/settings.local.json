@@ -10,7 +10,8 @@
       "Bash(gcloud services enable:*)",
       "Bash(gcloud logging read:*)",
       "Bash(jq:*)",
-      "Bash(uv run ruff:*)"
+      "Bash(uv run ruff:*)",
+      "Bash(git log:*)"
     ]
   },
   "hooks": {

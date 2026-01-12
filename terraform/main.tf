@@ -182,6 +182,11 @@ resource "google_cloud_run_v2_service" "app" {
     }
 
     max_instance_request_concurrency = 80
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 10
+    }
   }
 
   traffic {
@@ -271,11 +276,16 @@ resource "google_cloud_run_v2_service" "green" {
 
       env {
         name  = "OAUTH_REDIRECT_URI"
-        value = var.domain_name != "" ? "https://${var.domain_name}" : "https://${google_compute_global_address.lb_ip.address}.nip.io"
+        value = "http://localhost:8080"
       }
     }
 
     max_instance_request_concurrency = 80
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 10
+    }
   }
 
   traffic {
