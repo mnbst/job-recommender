@@ -201,6 +201,47 @@ def delete_firestore_session(session_id: str) -> None:
         )
 
 
+def delete_user_sessions(user_id: int) -> int:
+    """指定ユーザーの全セッションを削除.
+
+    Args:
+        user_id: GitHubユーザーID
+
+    Returns:
+        削除したセッション数
+    """
+    try:
+        db = get_firestore_client()
+        sessions_ref = db.collection("sessions")
+        query = sessions_ref.where("user_id", "==", user_id)
+        docs = query.stream()
+
+        deleted_count = 0
+        for doc in docs:
+            doc.reference.delete()
+            deleted_count += 1
+
+        if deleted_count > 0:
+            log_structured(
+                logger,
+                "Deleted existing user sessions",
+                level=logging.INFO,
+                user_id=user_id,
+                deleted_count=deleted_count,
+            )
+
+        return deleted_count
+    except Exception:
+        log_structured(
+            logger,
+            "Failed to delete user sessions",
+            level=logging.ERROR,
+            exc_info=True,
+            user_id=user_id,
+        )
+        return 0
+
+
 def generate_session_id() -> str:
     """新しいセッションIDを生成.
 
