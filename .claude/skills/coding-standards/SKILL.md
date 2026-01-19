@@ -1,6 +1,7 @@
 ---
 name: coding-standards
 description: Python/Terraformのコーディング規約。コード作成、修正、レビュー時に参照。型ヒント、dataclass、Ruff、CIDR設定など。
+user-invocable: false
 allowed-tools: Read, Grep, Glob
 ---
 
