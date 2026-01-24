@@ -53,14 +53,14 @@ steps:
     args:
       - '-c'
       - |
-        if [ "$$BRANCH_NAME" = "main" ]; then
+        if [ "$BRANCH_NAME" = "main" ]; then
           echo "Deploying to BLUE (production)..."
           SERVICE_NAME="job-recommender"
-        elif [ "$$BRANCH_NAME" = "dev" ]; then
+        elif [ "$BRANCH_NAME" = "dev" ]; then
           echo "Deploying to GREEN (staging)..."
           SERVICE_NAME="job-recommender-green"
         else
-          echo "Skipping deploy for branch: $$BRANCH_NAME"
+          echo "Skipping deploy for branch: $BRANCH_NAME"
           exit 0
         fi
         gcloud run deploy $$SERVICE_NAME \
