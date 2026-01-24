@@ -1,16 +1,5 @@
 # Job Recommender
 
-## Memory Bank Rule
-**重要**: 仕様変更・設計変更があった場合、関連ファイルを必ず更新：
-| 変更内容 | 更新先 |
-|---------|--------|
-| スタック・構造 | [CLAUDE.md](./CLAUDE.md) |
-| コーディング規約 | [.claude/skills/coding-standards/SKILL.md](./.claude/skills/coding-standards/SKILL.md) |
-| アーキテクチャ | [.claude/skills/project-architecture/SKILL.md](./.claude/skills/project-architecture/SKILL.md) |
-| トラブル対応 | [.claude/skills/troubleshooting/SKILL.md](./.claude/skills/troubleshooting/SKILL.md) |
-
-セッション終了前に必ず反映すること。
-
 ## Writing Style
 CLAUDE.md・skills/*.md・agents/*.mdを更新する際は以下を守る：
 - **簡潔に**: 箇条書き・表・コードブロック優先。散文は避ける
@@ -41,13 +30,15 @@ Dockerfile       → Python 3.11-slim + uv
 GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検索 + マッチング分析)
 ```
 
-## Skills（自動参照）
-| Skill | 用途 |
-|-------|------|
-| [coding-standards](./.claude/skills/coding-standards/SKILL.md) | Python/Terraform コーディング規約 |
-| [project-architecture](./.claude/skills/project-architecture/SKILL.md) | データフロー・インフラ構成 |
-| [troubleshooting](./.claude/skills/troubleshooting/SKILL.md) | 障害対応・デバッグ |
-| [github-oauth](./.claude/skills/github-oauth/SKILL.md) | OAuth認証フロー・トークン仕様 |
+## Skills（必要時に参照）
+以下のスキルはClaudeが作業内容に応じて自動で参照します：
+
+| Skill | 参照タイミング |
+|-------|---------------|
+| [coding-standards](./.claude/skills/coding-standards/SKILL.md) | コード作成・修正・レビュー時 |
+| [project-architecture](./.claude/skills/project-architecture/SKILL.md) | 実装方針検討・デバッグ時 |
+| [troubleshooting](./.claude/skills/troubleshooting/SKILL.md) | 障害対応・エラー調査時 |
+| [github-oauth](./.claude/skills/github-oauth/SKILL.md) | OAuth認証関連の作業時 |
 
 ## Agents（作業実行）
 | 作業 | エージェント |
@@ -140,3 +131,4 @@ echo -n "GREEN_CLIENT_SECRET" | gcloud secrets create green_github_oauth_client_
 ```hcl
 cloud_run_invoker_members = ["user:your-email@gmail.com"]
 ```
+
