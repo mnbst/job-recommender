@@ -28,62 +28,29 @@
         <li>アバター画像URL</li>
         <li>公開リポジトリ情報（名前、説明、使用言語、README等）</li>
       </ul>
-      <p><small>GitHub App権限: Contents（Read-only, Public repositories only）</small></p>
 
       <h2>2. データの保存</h2>
       <p>取得したデータは Google Cloud Firestore に保存されます。</p>
       <ul>
-        <li><strong>セッション情報:</strong> 7日間（ログイン状態の維持に使用）</li>
-        <li><strong>プロファイル・キャッシュ:</strong> 30日間（分析結果の再利用に使用）</li>
+        <li><strong>セッション情報:</strong> 7日間</li>
+        <li><strong>プロファイル・キャッシュ:</strong> 30日間</li>
       </ul>
 
       <h2>3. 第三者サービスへのデータ送信</h2>
-      <p>本サービスでは、機能提供のため以下の第三者サービスにデータを送信します。</p>
-
       <h3>Google Vertex AI (Gemini)</h3>
-      <p><strong>用途:</strong> プロファイル生成（GitHubリポジトリの分析）</p>
-      <p><strong>送信データ:</strong></p>
-      <ul>
-        <li>リポジトリ名・説明・使用言語</li>
-        <li>README（一部）・ファイル構造</li>
-        <li>依存関係ファイル・コードサンプル（一部）</li>
-      </ul>
+      <p>プロファイル生成のため、リポジトリ情報を送信します。</p>
 
       <h3>Perplexity AI</h3>
-      <p><strong>用途:</strong> 求人検索</p>
-      <p><strong>送信データ:</strong></p>
-      <ul>
-        <li>生成されたプロファイル（技術スタック、スキル等）</li>
-        <li>求人検索条件（勤務地、職種等）</li>
-      </ul>
+      <p>求人検索のため、生成されたプロファイルを送信します。</p>
 
       <h2>4. データの削除</h2>
-      <p><strong>ログアウト時に即座に削除されるデータ:</strong></p>
-      <ul>
-        <li>セッション情報</li>
-        <li>プロファイル（分析結果）</li>
-        <li>リポジトリキャッシュ</li>
-        <li>ユーザー設定（勤務地、職種等の検索条件）</li>
-      </ul>
-
-      <p><strong>維持されるデータ:</strong></p>
-      <ul>
-        <li>クレジット情報（再ログイン時に引き継ぎ可能）</li>
-      </ul>
-
-      <p><strong>自動削除:</strong></p>
-      <p>ログアウトせずに放置した場合、TTL（Time To Live）により自動削除されます。</p>
-      <ul>
-        <li>セッション: 7日後</li>
-        <li>プロファイル・キャッシュ: 30日後</li>
-      </ul>
+      <p>ログアウト時にセッション・プロファイル・キャッシュは即座に削除されます。</p>
 
       <h2>5. Cookieの使用</h2>
-      <p>本サービスでは、セッション管理のためにCookieを使用しています。
-      Cookieにはセッション識別子のみが保存され、7日間有効です。</p>
+      <p>セッション管理のためにCookieを使用しています（7日間有効）。</p>
 
       <h2>6. お問い合わせ</h2>
-      <p>プライバシーに関するお問い合わせは、GitHubリポジトリのIssueにてお願いします。</p>
+      <p>GitHubリポジトリのIssueにてお問い合わせください。</p>
     </article>
   </main>
 

@@ -28,7 +28,6 @@ body {
   padding: 2rem 1rem;
 }
 
-/* Header */
 header {
   background: var(--white);
   border-bottom: 1px solid var(--border-color);
@@ -49,7 +48,6 @@ header .container {
   text-decoration: none;
 }
 
-/* Hero Section */
 .hero {
   text-align: center;
   padding: 4rem 1rem;
@@ -68,7 +66,6 @@ header .container {
   opacity: 0.9;
 }
 
-/* Buttons */
 .btn {
   display: inline-block;
   padding: 0.75rem 2rem;
@@ -91,19 +88,6 @@ header .container {
   transform: translateY(-1px);
 }
 
-.btn-github {
-  background-color: #24292e;
-  color: var(--white);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-github:hover {
-  background-color: #2f363d;
-}
-
-/* Features Section */
 .features {
   padding: 3rem 1rem;
   background: var(--white);
@@ -137,7 +121,6 @@ header .container {
   font-size: 0.9rem;
 }
 
-/* Content Pages */
 .content-page {
   background: var(--white);
   padding: 2rem;
@@ -199,7 +182,6 @@ header .container {
   margin: 1rem 0;
 }
 
-/* Pricing Cards */
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -229,7 +211,6 @@ header .container {
   font-size: 0.9rem;
 }
 
-/* Footer */
 footer {
   background: var(--primary-color);
   color: var(--white);
@@ -257,7 +238,6 @@ footer .copyright {
   opacity: 0.6;
 }
 
-/* Responsive */
 @media (max-width: 600px) {
   .hero h1 {
     font-size: 1.75rem;

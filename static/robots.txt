@@ -1,17 +1,7 @@
-# Job Recommender - robots.txt
-# Served from GCS
-
 User-agent: *
 Allow: /
 Allow: /privacy.html
 Allow: /terms.html
 Allow: /plans.html
-
-# Block app paths (Cloud Run)
 Disallow: /app
-Disallow: /callback
-
-# Block static assets from indexing
 Disallow: /css/
-Disallow: /js/
-Disallow: /images/
