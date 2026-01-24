@@ -2,6 +2,7 @@
 
 import streamlit as st
 
+from components.credits import render_remaining_credits_caption
 from services.cache import (
     get_cached_profile,
     invalidate_profile_cache,
@@ -9,13 +10,10 @@ from services.cache import (
     save_profile_cache,
     save_repos_cache,
 )
-from services.github import (
-    RepoMetadata,
-    analyze_selected_repos,
-    get_repos_metadata,
-)
+from services.github import analyze_selected_repos, get_repos_metadata
+from services.models import QuotaStatus, RepoMetadata
 from services.profile import generate_profile
-from services.quota import QuotaStatus, consume_credit
+from services.quota import consume_credit
 from services.session_keys import (
     JOB_RESULTS,
     PROFILE_STATE,
@@ -144,7 +142,7 @@ def profile_section(
                 st.warning("クレジットがありません。")
                 return cached_profile
 
-            st.caption(f"残り {quota.credits} クレジット")
+            render_remaining_credits_caption(quota.credits)
 
             selected_repos = _render_repo_selector(
                 user_login, repo_limit * 3, key_prefix="regen_"
@@ -167,7 +165,7 @@ def profile_section(
         st.warning("クレジットがありません。")
         return None
 
-    st.caption(f"残り {quota.credits} クレジット")
+    render_remaining_credits_caption(quota.credits)
 
     selected_repos = _render_repo_selector(user_login, repo_limit * 3)
 
@@ -181,18 +179,28 @@ def profile_section(
     return None
 
 
-def _regenerate_profile(user_id: int, user_login: str, repo_names: list[str]) -> None:
-    """プロファイルを再生成."""
+def _run_profile_generation(
+    user_id: int,
+    user_login: str,
+    repo_names: list[str],
+    *,
+    spinner_text: str,
+    keys_to_clear: list[str],
+    invalidate_cache: bool = False,
+) -> None:
+    """プロファイル生成の共通処理."""
     consume_credit(user_id)
-    invalidate_repos_cache(user_id)
-    invalidate_profile_cache(user_id)
-    st.session_state.pop(PROFILE_STATE, None)
-    st.session_state.pop(JOB_RESULTS, None)
-    # セレクター状態をクリア
-    st.session_state.pop(REGEN_REPO_METADATA_LIST, None)
-    st.session_state.pop(REGEN_SELECTED_REPOS, None)
 
-    with st.spinner("プロファイルを再生成中..."):
+    if invalidate_cache:
+        invalidate_repos_cache(user_id)
+        invalidate_profile_cache(user_id)
+        st.session_state.pop(PROFILE_STATE, None)
+        st.session_state.pop(JOB_RESULTS, None)
+
+    for key in keys_to_clear:
+        st.session_state.pop(key, None)
+
+    with st.spinner(spinner_text):
         repos = analyze_selected_repos(user_login, repo_names)
         if repos:
             save_repos_cache(user_id, repos)
@@ -207,27 +215,26 @@ def _regenerate_profile(user_id: int, user_login: str, repo_names: list[str]) ->
         else:
             st.error("リポジトリの分析に失敗しました")
         st.rerun()
+
+
+def _regenerate_profile(user_id: int, user_login: str, repo_names: list[str]) -> None:
+    """プロファイルを再生成."""
+    _run_profile_generation(
+        user_id,
+        user_login,
+        repo_names,
+        spinner_text="プロファイルを再生成中...",
+        keys_to_clear=[REGEN_REPO_METADATA_LIST, REGEN_SELECTED_REPOS],
+        invalidate_cache=True,
+    )
 
 
 def _generate_profile(user_id: int, user_login: str, repo_names: list[str]) -> None:
     """プロファイルを新規生成."""
-    consume_credit(user_id)
-    # セレクター状態をクリア
-    st.session_state.pop(REPO_METADATA_KEY, None)
-    st.session_state.pop(SELECTED_REPOS_KEY, None)
-
-    with st.spinner("GitHubプロファイルを分析中..."):
-        repos = analyze_selected_repos(user_login, repo_names)
-        if repos:
-            save_repos_cache(user_id, repos)
-            profile = generate_profile(repos)
-            save_profile_cache(
-                user_id=user_id,
-                github_login=user_login,
-                profile_data=profile,
-                repo_count=len(repos),
-            )
-            st.session_state[PROFILE_STATE] = profile
-        else:
-            st.error("リポジトリの分析に失敗しました")
-        st.rerun()
+    _run_profile_generation(
+        user_id,
+        user_login,
+        repo_names,
+        spinner_text="GitHubプロファイルを分析中...",
+        keys_to_clear=[REPO_METADATA_KEY, SELECTED_REPOS_KEY],
+    )

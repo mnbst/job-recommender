@@ -2,20 +2,46 @@
 
 import logging
 import os
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, TypeVar
 
 import streamlit as st
 from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentSnapshot
-from pydantic import BaseModel, Field
 
 from services.const import CACHE_TTL_DAYS
-from services.github import FileContent, RepoInfo
 from services.logging_config import log_structured
+from services.models import FileContent, RepoInfo, UserSettings
 from services.session_keys import PROFILE, USER_SETTINGS
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
+
+
+def _get_session_cached(
+    cache_key: str,
+    fetch_fn: Callable[[], T | None],
+    *,
+    cache_none: bool = True,
+) -> T | None:
+    """Fetch value with session_state cache."""
+    if cache_key in st.session_state:
+        return st.session_state[cache_key]
+
+    value = fetch_fn()
+    if value is not None or cache_none:
+        st.session_state[cache_key] = value
+    return value
+
+
+def _is_expired(updated_at: datetime | None, ttl_days: int) -> bool:
+    """Check if cached data has expired."""
+    if not updated_at:
+        return False
+    expiry = updated_at + timedelta(days=ttl_days)
+    return datetime.now(UTC) > expiry
 
 
 def get_firestore_client() -> firestore.Client:
@@ -45,10 +71,8 @@ def _fetch_cached_profile(user_id: int, repo_count: int) -> dict[str, Any] | Non
 
         # TTLチェック
         updated_at = data.get("updated_at")
-        if updated_at:
-            expiry = updated_at + timedelta(days=CACHE_TTL_DAYS)
-            if datetime.now(UTC) > expiry:
-                return None
+        if _is_expired(updated_at, CACHE_TTL_DAYS):
+            return None
 
         return data.get("profile_data")
     except Exception:
@@ -72,15 +96,11 @@ def get_cached_profile(user_id: int, repo_count: int) -> dict[str, Any] | None:
     Returns:
         キャッシュが有効ならprofile_data、それ以外はNone
     """
-    # session_stateにキャッシュがあれば返す
-    if PROFILE in st.session_state:
-        return st.session_state[PROFILE]
-
-    # Firestoreから取得してキャッシュ
-    profile = _fetch_cached_profile(user_id, repo_count)
-    if profile is not None:
-        st.session_state[PROFILE] = profile
-    return profile
+    return _get_session_cached(
+        PROFILE,
+        lambda: _fetch_cached_profile(user_id, repo_count),
+        cache_none=False,
+    )
 
 
 def invalidate_profile_session_cache() -> None:
@@ -184,10 +204,8 @@ def get_cached_repos(user_id: int, repo_count: int) -> list[RepoInfo] | None:
 
         # TTLチェック
         updated_at = data.get("updated_at")
-        if updated_at:
-            expiry = updated_at + timedelta(days=CACHE_TTL_DAYS)
-            if datetime.now(UTC) > expiry:
-                return None
+        if _is_expired(updated_at, CACHE_TTL_DAYS):
+            return None
 
         # dictからRepoInfoに復元
         repos_data = data.get("repos", [])
@@ -282,19 +300,6 @@ def _dict_to_repo_info(data: dict[str, Any]) -> RepoInfo:
 # ============================================
 # User Settings Cache
 # ============================================
-class UserSettings(BaseModel):
-    """ユーザー設定."""
-
-    repo_limit: int = 10
-    job_location: str = "東京"
-    salary_range: str = "指定なし"
-    work_style: list[str] = Field(default_factory=list)
-    job_type: list[str] = Field(default_factory=list)
-    employment_type: list[str] = Field(default_factory=list)
-    other_preferences: str = ""
-    plan: str = "free"  # "free" | "premium"
-
-
 def _fetch_user_settings(user_id: int) -> UserSettings:
     """Firestoreからユーザー設定を取得（内部用）."""
     try:
@@ -339,14 +344,12 @@ def get_user_settings(user_id: int) -> UserSettings:
     Returns:
         UserSettings（存在しない場合はデフォルト値）
     """
-    # session_stateにキャッシュがあれば返す
-    if USER_SETTINGS in st.session_state:
-        return st.session_state[USER_SETTINGS]
-
-    # Firestoreから取得してキャッシュ
-    settings = _fetch_user_settings(user_id)
-    st.session_state[USER_SETTINGS] = settings
-    return settings
+    cached = _get_session_cached(
+        USER_SETTINGS,
+        lambda: _fetch_user_settings(user_id),
+        cache_none=True,
+    )
+    return cached if cached is not None else UserSettings()
 
 
 def save_user_settings(user_id: int, settings: UserSettings) -> None:

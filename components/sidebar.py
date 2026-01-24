@@ -2,12 +2,9 @@
 
 import streamlit as st
 
-from services.auth import (
-    get_current_user,
-    is_authenticated,
-    logout,
-    render_login_button,
-)
+from components.credits import render_remaining_credits_caption
+from services.auth import get_current_user, is_authenticated, render_login_button
+from services.logout import logout
 from services.quota import get_quota_status
 
 
@@ -22,12 +19,15 @@ def render_sidebar(cookie_manager, redirect_uri: str) -> None:
                 st.write(f"**{user.login}**")
                 st.divider()
 
-                st.caption(f"残り {quota.credits} クレジット")
+                render_remaining_credits_caption(quota.credits)
                 st.divider()
 
-                if st.button("ログアウト", use_container_width=True):
-                    logout(cookie_manager)
-                    st.rerun()
+                st.button(
+                    "ログアウト",
+                    use_container_width=True,
+                    on_click=logout,
+                    args=(cookie_manager,),
+                )
         else:
             st.info("GitHubでログインして始めましょう")
             render_login_button(redirect_uri)

@@ -2,6 +2,8 @@
 
 import streamlit as st
 
+from components.plans import render_plan_card
+
 st.title("料金プラン")
 
 st.markdown("""
@@ -12,9 +14,12 @@ Job Recommenderでは、クレジット制を採用しています。
 # 無料プラン
 st.header("無料プラン")
 
-with st.container(border=True):
-    st.metric("初回付与", "5クレジット")
-    st.caption("新規登録時に付与されます")
+render_plan_card(
+    None,
+    "初回付与",
+    "5クレジット",
+    caption="新規登録時に付与されます",
+)
 
 st.divider()
 
@@ -24,22 +29,28 @@ st.header("クレジット消費")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    with st.container(border=True):
-        st.subheader("プロファイル生成")
-        st.metric("消費", "1クレジット")
-        st.caption("GitHubリポジトリ分析")
+    render_plan_card(
+        "プロファイル生成",
+        "消費",
+        "1クレジット",
+        caption="GitHubリポジトリ分析",
+    )
 
 with col2:
-    with st.container(border=True):
-        st.subheader("求人検索")
-        st.metric("消費", "1クレジット")
-        st.caption("3件の求人を表示")
+    render_plan_card(
+        "求人検索",
+        "消費",
+        "1クレジット",
+        caption="3件の求人を表示",
+    )
 
 with col3:
-    with st.container(border=True):
-        st.subheader("求人追加表示")
-        st.metric("消費", "1クレジット")
-        st.caption("最大3件を追加表示")
+    render_plan_card(
+        "求人追加表示",
+        "消費",
+        "1クレジット",
+        caption="最大3件を追加表示",
+    )
 
 st.divider()
 
@@ -49,24 +60,36 @@ st.header("クレジット購入")
 pack_col1, pack_col2, pack_col3 = st.columns(3)
 
 with pack_col1:
-    with st.container(border=True):
-        st.subheader("スターター")
-        st.metric("5クレジット", "¥500")
-        st.caption("¥100 / クレジット")
-        st.button("購入", key="buy_starter", disabled=True, use_container_width=True)
+    render_plan_card(
+        "スターター",
+        "5クレジット",
+        "¥500",
+        caption="¥100 / クレジット",
+        button_label="購入",
+        button_key="buy_starter",
+        button_disabled=True,
+    )
 
 with pack_col2:
-    with st.container(border=True):
-        st.subheader("スタンダード")
-        st.metric("15クレジット", "¥1,200")
-        st.caption("¥80 / クレジット")
-        st.button("購入", key="buy_standard", disabled=True, use_container_width=True)
+    render_plan_card(
+        "スタンダード",
+        "15クレジット",
+        "¥1,200",
+        caption="¥80 / クレジット",
+        button_label="購入",
+        button_key="buy_standard",
+        button_disabled=True,
+    )
 
 with pack_col3:
-    with st.container(border=True):
-        st.subheader("プレミアム")
-        st.metric("30クレジット", "¥1,800")
-        st.caption("¥60 / クレジット")
-        st.button("購入", key="buy_premium", disabled=True, use_container_width=True)
+    render_plan_card(
+        "プレミアム",
+        "30クレジット",
+        "¥1,800",
+        caption="¥60 / クレジット",
+        button_label="購入",
+        button_key="buy_premium",
+        button_disabled=True,
+    )
 
 st.info("決済機能は準備中です")

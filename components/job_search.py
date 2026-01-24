@@ -2,9 +2,11 @@
 
 import streamlit as st
 
-from services.cache import UserSettings, get_user_settings, save_user_settings
-from services.quota import QuotaStatus, consume_credit, get_quota_status
-from services.research import JobPreferences, JobSearchResult, search_jobs
+from components.credits import render_credit_button
+from services.cache import get_user_settings, save_user_settings
+from services.models import JobPreferences, JobSearchResult, QuotaStatus, UserSettings
+from services.quota import consume_credit, get_quota_status
+from services.research import search_jobs
 from services.session_keys import (
     EMPLOYMENT_TYPE,
     JOB_LOCATION,
@@ -120,39 +122,23 @@ def job_search(
                 )
 
     search_conditions()
-    search_col1, search_col2 = st.columns([1, 3])
-    with search_col1:
-        search_disabled = not quota.can_use
-        search_button = st.button(
-            "求人を検索",
-            disabled=search_disabled,
-            type="primary",
-            use_container_width=True,
-        )
-    with search_col2:
-        st.caption(f"残り {quota.credits} クレジット")
-
-    if search_disabled:
-        st.warning("クレジットがありません。")
+    search_button = render_credit_button(
+        "求人を検索",
+        credits=quota.credits,
+        can_use=quota.can_use,
+        type="primary",
+        use_container_width=True,
+        layout=(1, 3),
+    )
 
     if search_button:
         _save_settings(user_id, repo_limit)
         consume_credit(user_id)
 
-        with st.spinner("求人を検索中..."):
-            preferences = JobPreferences(
-                location=st.session_state.get(JOB_LOCATION, ""),
-                salary_range=st.session_state.get(SALARY_RANGE, "指定なし"),
-                work_style=st.session_state.get(WORK_STYLE) or None,
-                job_type=st.session_state.get(JOB_TYPE) or None,
-                employment_type=st.session_state.get(EMPLOYMENT_TYPE) or None,
-                other=st.session_state.get(OTHER_PREFERENCES, ""),
-            )
-            # 検索条件を保存（追加検索用）
-            st.session_state[JOB_PREFERENCES] = preferences
-            job_results = search_jobs(profile, preferences=preferences)
-            st.session_state[JOB_RESULTS] = job_results
-            st.rerun()
+        preferences = _build_preferences()
+        # 検索条件を保存（追加検索用）
+        st.session_state[JOB_PREFERENCES] = preferences
+        _set_job_results(profile, preferences)
 
     _display_job_results(user_id, profile)
 
@@ -160,43 +146,55 @@ def job_search(
 def _display_job_results(user_id: int, profile: dict) -> None:
     """求人結果を表示."""
     job_results: JobSearchResult | None = st.session_state.get(JOB_RESULTS)
+    _render_job_results_state(job_results, user_id, profile)
 
+
+def _render_job_results_state(
+    job_results: JobSearchResult | None,
+    user_id: int,
+    profile: dict,
+) -> None:
+    """求人結果の状態に応じて表示."""
     if not job_results:
         return
 
     if job_results.status == "success" and job_results.recommendations:
-        total = len(job_results.recommendations)
-        st.success(f"{total}件の求人を表示")
-
-        for rec in job_results.recommendations:
-            with st.expander(f"**{rec.job_title}** @ {rec.company}"):
-                st.write("**会社:**", rec.company)
-                st.write("**勤務地:**", rec.location)
-                if rec.salary_range:
-                    st.write("**給与:**", rec.salary_range)
-
-                st.write("---")
-                st.write("**マッチ理由:**")
-                st.info(rec.reason.summary)
-
-                st.write("**マッチした条件:**")
-                for condition in rec.reason.matched_conditions:
-                    st.write(f"- {condition}")
-
-                if rec.reason.why_good:
-                    st.write("**詳細:**")
-                    st.write(rec.reason.why_good)
-
-                if rec.sources:
-                    st.write("**ソース:**")
-                    for source in rec.sources:
-                        st.markdown(f"- [{source.used_for}]({source.url})")
-
-        # 「もっと見る」ボタン
+        _render_job_results(job_results)
         _show_more_button(user_id, profile)
+        return
 
-    elif job_results.error:
+    if job_results.error:
         st.warning(f"{job_results.error}")
+
+
+def _render_job_results(job_results: JobSearchResult) -> None:
+    """求人結果の一覧を表示."""
+    total = len(job_results.recommendations)
+    st.success(f"{total}件の求人を表示")
+
+    for rec in job_results.recommendations:
+        with st.expander(f"**{rec.job_title}** @ {rec.company}"):
+            st.write("**会社:**", rec.company)
+            st.write("**勤務地:**", rec.location)
+            if rec.salary_range:
+                st.write("**給与:**", rec.salary_range)
+
+            st.write("---")
+            st.write("**マッチ理由:**")
+            st.info(rec.reason.summary)
+
+            st.write("**マッチした条件:**")
+            for condition in rec.reason.matched_conditions:
+                st.write(f"- {condition}")
+
+            if rec.reason.why_good:
+                st.write("**詳細:**")
+                st.write(rec.reason.why_good)
+
+            if rec.sources:
+                st.write("**ソース:**")
+                for source in rec.sources:
+                    st.markdown(f"- [{source.used_for}]({source.url})")
 
 
 def _show_more_button(user_id: int, profile: dict) -> None:
@@ -207,16 +205,14 @@ def _show_more_button(user_id: int, profile: dict) -> None:
     if not job_results or not job_results.recommendations:
         return
 
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        more_disabled = not quota.can_use
-        more_button = st.button(
-            "もっと見る (最大3件)",
-            disabled=more_disabled,
-            use_container_width=True,
-        )
-    with col2:
-        st.caption(f"1クレジット消費 (残り {quota.credits})")
+    more_button = render_credit_button(
+        "もっと見る (最大3件)",
+        credits=quota.credits,
+        can_use=quota.can_use,
+        caption=f"1クレジット消費 (残り {quota.credits})",
+        use_container_width=True,
+        layout=(1, 3),
+    )
 
     if more_button:
         consume_credit(user_id)
@@ -225,27 +221,67 @@ def _show_more_button(user_id: int, profile: dict) -> None:
         exclude_companies = [rec.company for rec in job_results.recommendations]
 
         # 保存された検索条件を取得
-        preferences: JobPreferences | None = st.session_state.get(JOB_PREFERENCES)
-        if preferences is None:
-            preferences = JobPreferences()
+        preferences = st.session_state.get(JOB_PREFERENCES) or JobPreferences()
+        _append_job_results(profile, preferences, exclude_companies)
 
-        with st.spinner("追加の求人を検索中..."):
-            new_results = search_jobs(
-                profile,
-                preferences=preferences,
-                exclude_companies=exclude_companies,
+
+def _build_preferences() -> JobPreferences:
+    """検索条件をsession_stateから構築."""
+    return JobPreferences(
+        location=st.session_state.get(JOB_LOCATION, ""),
+        salary_range=st.session_state.get(SALARY_RANGE, "指定なし"),
+        work_style=st.session_state.get(WORK_STYLE) or None,
+        job_type=st.session_state.get(JOB_TYPE) or None,
+        employment_type=st.session_state.get(EMPLOYMENT_TYPE) or None,
+        other=st.session_state.get(OTHER_PREFERENCES, ""),
+    )
+
+
+def _run_job_search(
+    profile: dict,
+    preferences: JobPreferences,
+    *,
+    exclude_companies: list[str] | None = None,
+) -> JobSearchResult:
+    """求人検索を実行."""
+    return search_jobs(
+        profile,
+        preferences=preferences,
+        exclude_companies=exclude_companies,
+    )
+
+
+def _set_job_results(profile: dict, preferences: JobPreferences) -> None:
+    """求人検索の結果をセット."""
+    with st.spinner("求人を検索中..."):
+        job_results = _run_job_search(profile, preferences)
+        st.session_state[JOB_RESULTS] = job_results
+        st.rerun()
+
+
+def _append_job_results(
+    profile: dict,
+    preferences: JobPreferences,
+    exclude_companies: list[str],
+) -> None:
+    """追加検索結果を既存結果にマージ."""
+    with st.spinner("追加の求人を検索中..."):
+        new_results = _run_job_search(
+            profile,
+            preferences,
+            exclude_companies=exclude_companies,
+        )
+
+        if new_results.status == "success" and new_results.recommendations:
+            job_results: JobSearchResult | None = st.session_state.get(JOB_RESULTS)
+            existing = job_results.recommendations if job_results else []
+            combined_recommendations = existing + new_results.recommendations
+            st.session_state[JOB_RESULTS] = JobSearchResult(
+                recommendations=combined_recommendations,
+                status="success",
             )
-
-            if new_results.status == "success" and new_results.recommendations:
-                combined_recommendations = (
-                    job_results.recommendations + new_results.recommendations
-                )
-                st.session_state[JOB_RESULTS] = JobSearchResult(
-                    recommendations=combined_recommendations,
-                    status="success",
-                )
-            elif new_results.error:
-                st.warning(f"追加検索エラー: {new_results.error}")
-            else:
-                st.info("これ以上の求人が見つかりませんでした")
-            st.rerun()
+        elif new_results.error:
+            st.warning(f"追加検索エラー: {new_results.error}")
+        else:
+            st.info("これ以上の求人が見つかりませんでした")
+        st.rerun()

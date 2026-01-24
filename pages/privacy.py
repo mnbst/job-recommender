@@ -2,14 +2,16 @@
 
 import streamlit as st
 
-st.title("プライバシーポリシー")
+from components.legal import (
+    render_page_header,
+    render_section,
+    render_section_divider,
+)
 
-st.markdown("最終更新日: 2025年1月")
-
-st.divider()
+render_page_header("プライバシーポリシー", "2025年1月")
 
 # 収集する情報
-st.header("1. 収集する情報")
+render_section("1. 収集する情報")
 
 st.markdown("""
 本サービスでは、GitHub Appの認可を通じて以下の情報を取得します。
@@ -25,10 +27,10 @@ with st.container(border=True):
     """)
     st.caption("GitHub App権限: Contents（Read-only, Public repositories only）")
 
-st.divider()
+render_section_divider()
 
 # データの保存
-st.header("2. データの保存")
+render_section("2. データの保存")
 
 st.markdown("取得したデータは Google Cloud Firestore に保存されます。")
 
@@ -46,10 +48,10 @@ with col2:
         st.metric("保存期間", "30日間")
         st.caption("分析結果の再利用に使用")
 
-st.divider()
+render_section_divider()
 
 # 第三者サービスへの送信
-st.header("3. 第三者サービスへのデータ送信")
+render_section("3. 第三者サービスへのデータ送信")
 
 st.markdown("""
 本サービスでは、機能提供のため以下の第三者サービスにデータを送信します。
@@ -76,10 +78,10 @@ with st.container(border=True):
     - 求人検索条件（勤務地、職種等）
     """)
 
-st.divider()
+render_section_divider()
 
 # データの削除
-st.header("4. データの削除")
+render_section("4. データの削除")
 
 st.markdown("""
 **ログアウト時に即座に削除されるデータ:**
@@ -97,20 +99,20 @@ st.markdown("""
   - プロファイル・キャッシュ: 30日後
 """)
 
-st.divider()
+render_section_divider()
 
 # Cookie
-st.header("5. Cookieの使用")
+render_section("5. Cookieの使用")
 
 st.markdown("""
 本サービスでは、セッション管理のためにCookieを使用しています。
 Cookieにはセッション識別子のみが保存され、7日間有効です。
 """)
 
-st.divider()
+render_section_divider()
 
 # お問い合わせ
-st.header("6. お問い合わせ")
+render_section("6. お問い合わせ")
 
 st.markdown("""
 プライバシーに関するお問い合わせは、GitHubリポジトリのIssueにてお願いします。

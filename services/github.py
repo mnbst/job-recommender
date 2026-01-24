@@ -5,10 +5,11 @@ import os
 
 from github import Github
 from github.ContentFile import ContentFile
+from github.GithubException import GithubException, UnknownObjectException
 from github.Repository import Repository
-from pydantic import BaseModel, Field
 
 from services.logging_config import log_structured
+from services.models import FileContent, RepoInfo, RepoMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -54,43 +55,6 @@ CONFIG_FILES = [
     "webpack.config.js",
     "vite.config.ts",
 ]
-
-
-class FileContent(BaseModel):
-    """File content from repository."""
-
-    path: str
-    content: str
-
-
-class RepoMetadata(BaseModel):
-    """Lightweight repository metadata for selection UI."""
-
-    name: str
-    full_name: str
-    description: str | None
-    language: str | None
-    stars: int
-    is_fork: bool
-
-
-class RepoInfo(BaseModel):
-    """Repository information extracted from GitHub."""
-
-    name: str
-    description: str | None
-    language: str | None
-    languages: dict[str, int]
-    topics: list[str]
-    readme: str | None
-    stars: int
-    forks: int
-    updated_at: str
-    is_fork: bool = False
-    file_structure: list[str] = Field(default_factory=list)
-    dependency_files: list[FileContent] = Field(default_factory=list)
-    main_files: list[FileContent] = Field(default_factory=list)
-    config_files: list[str] = Field(default_factory=list)
 
 
 def get_github_client() -> Github:
@@ -243,16 +207,12 @@ def get_dependency_files(repo: Repository, structure: list[str]) -> list[FileCon
     Returns:
         List of FileContent with dependency file contents
     """
-    results: list[FileContent] = []
-
-    for dep_file in DEPENDENCY_FILES:
-        if dep_file in structure:
-            content = get_file_content(repo, dep_file)
-            if content:
-                # 長すぎる場合は切り詰め
-                results.append(FileContent(path=dep_file, content=content[:5000]))
-
-    return results
+    return _collect_file_contents(
+        repo,
+        structure,
+        DEPENDENCY_FILES,
+        content_limit=5000,
+    )
 
 
 def get_main_files(repo: Repository, structure: list[str]) -> list[FileContent]:
@@ -265,29 +225,20 @@ def get_main_files(repo: Repository, structure: list[str]) -> list[FileContent]:
     Returns:
         List of FileContent with main file contents
     """
-    results: list[FileContent] = []
-
     # src/やapp/ディレクトリ内も検索
     search_paths = [""] + [
         f"{d}/"
         for d in ["src", "app", "lib", "cmd"]
         if any(p.startswith(d + "/") for p in structure)
     ]
-
-    for main_file in MAIN_FILE_PATTERNS:
-        for prefix in search_paths:
-            path = f"{prefix}{main_file}"
-            if path in structure or main_file in structure:
-                actual_path = path if path in structure else main_file
-                content = get_file_content(repo, actual_path)
-                if content:
-                    # 長すぎる場合は切り詰め
-                    results.append(
-                        FileContent(path=actual_path, content=content[:3000])
-                    )
-                    break
-
-    return results[:3]  # 最大3ファイル
+    return _collect_file_contents(
+        repo,
+        structure,
+        MAIN_FILE_PATTERNS,
+        search_paths=search_paths,
+        content_limit=3000,
+        max_files=3,
+    )
 
 
 def get_config_files(structure: list[str]) -> list[str]:
@@ -310,6 +261,38 @@ def get_config_files(structure: list[str]) -> list[str]:
     return found
 
 
+def _collect_file_contents(
+    repo: Repository,
+    structure: list[str],
+    patterns: list[str],
+    *,
+    search_paths: list[str] | None = None,
+    content_limit: int = 5000,
+    max_files: int | None = None,
+) -> list[FileContent]:
+    """ファイルパターンに一致する内容を収集."""
+    results: list[FileContent] = []
+    prefixes = search_paths or [""]
+
+    for pattern in patterns:
+        for prefix in prefixes:
+            path = f"{prefix}{pattern}"
+            if path in structure or pattern in structure:
+                actual_path = path if path in structure else pattern
+                content = get_file_content(repo, actual_path)
+                if content:
+                    # 長すぎる場合は切り詰め
+                    results.append(
+                        FileContent(path=actual_path, content=content[:content_limit])
+                    )
+                    break
+
+        if max_files is not None and len(results) >= max_files:
+            break
+
+    return results
+
+
 def extract_repo_info(repo: Repository) -> RepoInfo:
     """Extract relevant information from a repository."""
     # Get README content
@@ -317,6 +300,21 @@ def extract_repo_info(repo: Repository) -> RepoInfo:
     try:
         readme_file = repo.get_readme()
         readme = readme_file.decoded_content.decode("utf-8")
+    except UnknownObjectException:
+        log_structured(
+            logger,
+            "README not found",
+            level=logging.INFO,
+            repo=repo.full_name,
+        )
+    except GithubException:
+        log_structured(
+            logger,
+            "Failed to read README",
+            level=logging.ERROR,
+            exc_info=True,
+            repo=repo.full_name,
+        )
     except Exception:
         log_structured(
             logger,

@@ -5,56 +5,18 @@ import logging
 import os
 
 from perplexity import Perplexity
-from pydantic import BaseModel
 
 from services.logging_config import log_structured
+from services.models import (
+    JobPreferences,
+    JobRecommendation,
+    JobSearchResult,
+    JobSource,
+    JobUrlResult,
+    MatchReason,
+)
 
 logger = logging.getLogger(__name__)
-
-
-class JobSource(BaseModel):
-    """Source URL for job information."""
-
-    url: str
-    used_for: str
-
-
-class MatchReason(BaseModel):
-    """Explanation for why a job is a good match."""
-
-    summary: str
-    matched_conditions: list[str]
-    why_good: str
-
-
-class JobRecommendation(BaseModel):
-    """Job recommendation from Perplexity API."""
-
-    job_title: str
-    company: str
-    location: str
-    salary_range: str | None
-    reason: MatchReason
-    sources: list[JobSource]
-
-
-class JobSearchResult(BaseModel):
-    """Result from Perplexity job search."""
-
-    recommendations: list[JobRecommendation]
-    status: str
-    error: str | None = None
-
-
-class JobPreferences(BaseModel):
-    """求職者の希望条件."""
-
-    location: str = "東京"
-    salary_range: str = "指定なし"
-    work_style: list[str] | None = None
-    job_type: list[str] | None = None
-    employment_type: list[str] | None = None
-    other: str = ""
 
 
 def build_search_prompt(
@@ -323,14 +285,6 @@ def search_jobs(
             status="error",
             error=str(e),
         )
-
-
-class JobUrlResult(BaseModel):
-    """求人URL検索結果."""
-
-    url: str | None
-    status: str
-    error: str | None = None
 
 
 def search_job_url(company: str, job_title: str, location: str = "") -> JobUrlResult:

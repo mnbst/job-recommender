@@ -7,21 +7,14 @@ import streamlit as st
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentSnapshot
-from pydantic import BaseModel
 
 from services.cache import get_firestore_client
 from services.const import FREE_PLAN_INITIAL_CREDITS
 from services.logging_config import log_structured
+from services.models import QuotaStatus
 from services.session_keys import QUOTA_STATUS
 
 logger = logging.getLogger(__name__)
-
-
-class QuotaStatus(BaseModel):
-    """ユーザーのクォータ状態."""
-
-    credits: int  # 残りクレジット
-    can_use: bool  # クレジットが残っているか
 
 
 def _get_credits_data(user_id: int) -> dict | None:
