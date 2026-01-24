@@ -79,10 +79,7 @@ if not logout_requested:
 # 未認証の場合はGitHub認証にリダイレクト
 if not is_authenticated():
     auth_url = get_authorization_url(REDIRECT_URI)
-    st.markdown(
-        f'<meta http-equiv="refresh" content="0; url={auth_url}">',
-        unsafe_allow_html=True,
-    )
+    st.html(f'<meta http-equiv="refresh" content="0; url={auth_url}">')
     st.stop()
 
 # Sidebar

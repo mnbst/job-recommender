@@ -12,7 +12,7 @@ REGION="${2:-asia-northeast1}"
 SERVICE_NAME="job-recommender-green"
 
 echo "Starting proxy to green environment..."
-echo "Access at: http://localhost:$PORT"
+echo "Access at: http://localhost:$PORT/app/"
 echo "Press Ctrl+C to stop"
 echo ""
 
