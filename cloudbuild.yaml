@@ -55,19 +55,18 @@ steps:
       - |
         if [ "$BRANCH_NAME" = "main" ]; then
           echo "Deploying to BLUE (production)..."
-          DEPLOY_OPTS=""
+          SERVICE_NAME="job-recommender"
         elif [ "$BRANCH_NAME" = "dev" ]; then
           echo "Deploying to GREEN (staging)..."
-          DEPLOY_OPTS="--no-traffic --tag=green"
+          SERVICE_NAME="job-recommender-green"
         else
           echo "Skipping deploy for branch: $BRANCH_NAME"
           exit 0
         fi
-        gcloud run deploy job-recommender \
+        gcloud run deploy $SERVICE_NAME \
           --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA} \
           --region=${_REGION} \
-          --platform=managed \
-          $$DEPLOY_OPTS
+          --platform=managed
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA}'
