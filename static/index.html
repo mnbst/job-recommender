@@ -16,8 +16,23 @@
   <section class="hero">
     <h1>GitHub経歴からあなたに最適な求人を提案</h1>
     <p>公開リポジトリを分析し、AIがあなたのスキルにマッチした求人を見つけます</p>
-    <a href="/app" class="btn btn-primary">GitHubでログイン</a>
+    <a id="login-btn" href="/app" class="btn btn-primary">GitHubでログイン</a>
   </section>
+
+  <script>
+    (function() {
+      const clientId = '%%GITHUB_OAUTH_CLIENT_ID%%';
+      // client_idが未置換の場合は/appにフォールバック
+      if (clientId.startsWith('%%')) return;
+      const redirectUri = window.location.origin + '/app';
+      const scope = 'read:user user:email';
+      const authUrl = 'https://github.com/login/oauth/authorize?' +
+        'client_id=' + encodeURIComponent(clientId) +
+        '&redirect_uri=' + encodeURIComponent(redirectUri) +
+        '&scope=' + encodeURIComponent(scope);
+      document.getElementById('login-btn').href = authUrl;
+    })();
+  </script>
 
   <section class="features">
     <div class="container">

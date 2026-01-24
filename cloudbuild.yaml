@@ -68,6 +68,23 @@ steps:
           --region=${_REGION} \
           --platform=managed
 
+  # Upload static files to GCS (main branch only)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    secretEnv: ['GITHUB_OAUTH_CLIENT_ID']
+    args:
+      - '-c'
+      - |
+        if [ "$BRANCH_NAME" != "main" ]; then
+          echo "Skipping static upload for branch: $BRANCH_NAME"
+          exit 0
+        fi
+        echo "Uploading static files to GCS..."
+        # Replace placeholder with actual client_id
+        sed -i "s/%%GITHUB_OAUTH_CLIENT_ID%%/$$GITHUB_OAUTH_CLIENT_ID/g" static/index.html
+        # Upload to GCS
+        gsutil -m rsync -r -d static/ gs://${PROJECT_ID}-landing-page/
+
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${SHORT_SHA}'
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:latest'
@@ -78,3 +95,8 @@ substitutions:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/${PROJECT_ID}/secrets/github_oauth_client_id/versions/latest
+      env: 'GITHUB_OAUTH_CLIENT_ID'
