@@ -1,6 +1,7 @@
 ---
 name: project-architecture
 description: プロジェクト構造とデータフロー。実装、修正、デバッグ時に参照。GitHub API、Vertex AI、Perplexity AI連携。
+user-invocable: false
 allowed-tools: Read, Grep, Glob
 ---
 

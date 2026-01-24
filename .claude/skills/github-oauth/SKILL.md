@@ -1,6 +1,7 @@
 ---
 name: github-oauth
 description: GitHub OAuth認証の仕様。認証フロー、トークン管理、セッション永続化に関する情報。
+user-invocable: false
 allowed-tools: Read, Grep, Glob
 ---
 
