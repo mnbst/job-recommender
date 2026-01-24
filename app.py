@@ -76,11 +76,19 @@ if not logout_requested:
     # OAuthコールバック処理
     handle_oauth_callback(cookie_manager)
 
-# 未認証の場合はGitHub認証にリダイレクト
+# 未認証の場合の処理
 if not is_authenticated():
-    auth_url = get_authorization_url(REDIRECT_URI)
-    st.html(f'<meta http-equiv="refresh" content="0; url={auth_url}">')
-    st.stop()
+    if is_cloud_run():
+        # Cloud Run: 静的ページ経由でのみアクセスを許可
+        st.stop()
+    else:
+        # ローカル: GitHub認証にリダイレクト
+        auth_url = get_authorization_url(REDIRECT_URI)
+        st.markdown(
+            f'<meta http-equiv="refresh" content="0; url={auth_url}">',
+            unsafe_allow_html=True,
+        )
+        st.stop()
 
 # Sidebar
 render_sidebar(cookie_manager, REDIRECT_URI)
