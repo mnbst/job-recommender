@@ -8,7 +8,12 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from components import render_sidebar
-from services.auth import handle_oauth_callback, restore_session
+from services.auth import (
+    get_authorization_url,
+    handle_oauth_callback,
+    is_authenticated,
+    restore_session,
+)
 from services.logging_config import is_cloud_run, log_structured, setup_logging
 from services.session import get_cookie_manager
 
@@ -27,15 +32,6 @@ st.set_page_config(
     page_icon="💼",
     layout="wide",
 )
-
-# CookieManagerの取得（セッション永続化用）
-cookie_manager = get_cookie_manager()
-
-# セッション復元（Cookieから）
-restore_session(cookie_manager)
-
-# OAuthコールバック処理
-handle_oauth_callback(cookie_manager)
 
 
 # リダイレクトURI（localhost経由の場合は動的に設定）
@@ -58,6 +54,24 @@ def get_redirect_uri() -> str:
 
 
 REDIRECT_URI = get_redirect_uri()
+
+# CookieManagerの取得（セッション永続化用）
+cookie_manager = get_cookie_manager()
+
+# セッション復元（Cookieから）
+restore_session(cookie_manager)
+
+# OAuthコールバック処理
+handle_oauth_callback(cookie_manager)
+
+# 未認証の場合はGitHub認証にリダイレクト
+if not is_authenticated():
+    auth_url = get_authorization_url(REDIRECT_URI)
+    st.markdown(
+        f'<meta http-equiv="refresh" content="0; url={auth_url}">',
+        unsafe_allow_html=True,
+    )
+    st.stop()
 
 # Sidebar
 render_sidebar(cookie_manager, REDIRECT_URI)
