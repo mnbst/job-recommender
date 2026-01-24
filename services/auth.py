@@ -156,10 +156,14 @@ def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bo
     # セッション永続化
     if cookie_manager is not None:
         from services.session import (
+            delete_user_sessions,
             generate_session_id,
             save_firestore_session,
             set_session_cookie,
         )
+
+        # 既存セッションを削除（1ユーザー1セッションを保証）
+        delete_user_sessions(user.id)
 
         session_id = generate_session_id()
         save_firestore_session(session_id, user, access_token)

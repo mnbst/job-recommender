@@ -206,7 +206,11 @@ def search_jobs(
     log_structured(logger, "求人検索開始", search_params=search_params)
 
     try:
-        client = Perplexity()
+        # Debug: APIキーの状態を確認
+        logger.info(
+            f"PERPLEXITY_API_KEY exists: {bool(api_key)}, len: {len(api_key) if api_key else 0}"
+        )
+        client = Perplexity(api_key=api_key)  # 明示的にAPIキーを渡す
 
         completion = client.chat.completions.create(
             model="sonar-pro",
@@ -376,7 +380,7 @@ If you cannot find any relevant URL, return {{"job_url": null}}
 """
 
     try:
-        client = Perplexity()
+        client = Perplexity(api_key=api_key)  # 明示的にAPIキーを渡す
 
         completion = client.chat.completions.create(
             model="sonar",

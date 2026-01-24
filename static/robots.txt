@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /plans.html
+Disallow: /app
+Disallow: /css/

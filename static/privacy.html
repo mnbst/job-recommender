@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プライバシーポリシー - Job Recommender</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="logo">Job Recommender</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <article class="content-page">
+      <h1>プライバシーポリシー</h1>
+      <p class="date">最終更新日: 2025年1月</p>
+
+      <h2>1. 収集する情報</h2>
+      <p>本サービスでは、GitHub Appの認可を通じて以下の情報を取得します。</p>
+
+      <h3>GitHub アカウント情報</h3>
+      <ul>
+        <li>ユーザーID・ログイン名</li>
+        <li>表示名・メールアドレス（公開設定時のみ）</li>
+        <li>アバター画像URL</li>
+        <li>公開リポジトリ情報（名前、説明、使用言語、README等）</li>
+      </ul>
+
+      <h2>2. データの保存</h2>
+      <p>取得したデータは Google Cloud Firestore に保存されます。</p>
+      <ul>
+        <li><strong>セッション情報:</strong> 7日間</li>
+        <li><strong>プロファイル・キャッシュ:</strong> 30日間</li>
+      </ul>
+
+      <h2>3. 第三者サービスへのデータ送信</h2>
+      <h3>Google Vertex AI (Gemini)</h3>
+      <p>プロファイル生成のため、リポジトリ情報を送信します。</p>
+
+      <h3>Perplexity AI</h3>
+      <p>求人検索のため、生成されたプロファイルを送信します。</p>
+
+      <h2>4. データの削除</h2>
+      <p>ログアウト時にセッション・プロファイル・キャッシュは即座に削除されます。</p>
+
+      <h2>5. Cookieの使用</h2>
+      <p>セッション管理のためにCookieを使用しています（7日間有効）。</p>
+
+      <h2>6. お問い合わせ</h2>
+      <p>GitHubリポジトリのIssueにてお問い合わせください。</p>
+    </article>
+  </main>
+
+  <footer>
+    <nav>
+      <a href="/privacy.html">プライバシーポリシー</a>
+      <a href="/terms.html">利用規約</a>
+      <a href="/plans.html">料金プラン</a>
+    </nav>
+    <p class="copyright">Job Recommender</p>
+  </footer>
+</body>
+</html>
