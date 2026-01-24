@@ -23,7 +23,11 @@
 ### Step 1: プロファイル生成改善
 - [ ] モデル変更検討（gemini-2.5-flash → claude-opus-4 or claude-sonnet-4）
 
-### Step 2: フリー入力モード
+### Step 2: OAuth UX改善
+- [ ] ログイン時に別タブが開く問題の修正
+  - popup方式 → redirect方式に変更して同一タブで完結
+
+### Step 3: フリー入力モード
 - [ ] GitHub認証なしでも利用可能なフリー入力モード
   - スキル・経験を直接テキスト入力
   - 希望条件（職種、勤務地、年収など）の入力フォーム
@@ -69,8 +73,12 @@
 ## Phase 4: インフラ改善
 
 ### Step 1: セキュリティ
-- [ ] Cloud Armor 導入（WAF、レート制限）
+- [ ] Cloud Armor 導入（WAF、レート制限）※要支払い実績
 - [ ] Bot対策（reCAPTCHA Enterprise）
+- [x] ボットアクセス対策（GCS静的ページ分離）
+  - GCSランディングページ（`/` → GCS、Cloud Run起動なし）
+  - Streamlitアプリは`/app`配下で動作（`--server.baseUrlPath=/app`）
+  - startup_probe設定済み（startup_cpu_boostはコンソールから手動設定）
 
 ### Step 2: ドメイン・監視
 - [x] カスタムドメイン取得・設定

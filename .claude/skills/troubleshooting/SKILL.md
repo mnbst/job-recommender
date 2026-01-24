@@ -1,6 +1,7 @@
 ---
 name: troubleshooting
 description: 障害対応・デバッグ時の解決策。エラー、アクセス不可、IAP認証失敗、API制限などの問題発生時に参照。
+user-invocable: false
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
