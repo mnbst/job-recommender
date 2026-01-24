@@ -2,6 +2,33 @@
 # Cloud Load Balancer
 # ============================================
 
+# ============================================
+# GCS Bucket for Landing Page (Bot Protection)
+# ============================================
+resource "google_storage_bucket" "landing_page" {
+  name                        = "${var.project_id}-landing-page"
+  location                    = "ASIA"
+  uniform_bucket_level_access = true
+  force_destroy               = true
+
+  website {
+    main_page_suffix = "index.html"
+    not_found_page   = "index.html"
+  }
+}
+
+resource "google_storage_bucket_iam_member" "landing_public_read" {
+  bucket = google_storage_bucket.landing_page.name
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
+}
+
+resource "google_compute_backend_bucket" "landing_page" {
+  name        = "landing-page-backend"
+  bucket_name = google_storage_bucket.landing_page.name
+  enable_cdn  = true
+}
+
 # 静的IPアドレス（グローバル）
 resource "google_compute_global_address" "lb_ip" {
   name = "job-recommender-lb-ip"
@@ -41,10 +68,26 @@ resource "google_compute_backend_service" "app" {
   }
 }
 
-# URL Map
+# URL Map（パスベースルーティング）
 resource "google_compute_url_map" "app" {
   name            = "job-recommender-url-map"
-  default_service = google_compute_backend_service.app.id
+  default_service = google_compute_backend_bucket.landing_page.id
+
+  host_rule {
+    hosts        = ["*"]
+    path_matcher = "app-routes"
+  }
+
+  path_matcher {
+    name            = "app-routes"
+    default_service = google_compute_backend_bucket.landing_page.id
+
+    # /app/* → Cloud Run
+    path_rule {
+      paths   = ["/app", "/app/*"]
+      service = google_compute_backend_service.app.id
+    }
+  }
 }
 
 # SSL証明書（Google管理）
@@ -121,4 +164,9 @@ output "load_balancer_url" {
 output "artifact_registry_url" {
   description = "Artifact Registry URL for docker push"
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.app.repository_id}"
+}
+
+output "landing_page_bucket" {
+  description = "GCS bucket name for landing page"
+  value       = google_storage_bucket.landing_page.name
 }

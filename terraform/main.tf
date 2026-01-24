@@ -177,7 +177,17 @@ resource "google_cloud_run_v2_service" "app" {
 
       env {
         name  = "OAUTH_REDIRECT_URI"
-        value = var.domain_name != "" ? "https://${var.domain_name}" : "https://${google_compute_global_address.lb_ip.address}.nip.io"
+        value = var.domain_name != "" ? "https://${var.domain_name}/app" : "https://${google_compute_global_address.lb_ip.address}.nip.io/app"
+      }
+
+      startup_probe {
+        initial_delay_seconds = 0
+        timeout_seconds       = 240
+        period_seconds        = 240
+        failure_threshold     = 1
+        tcp_socket {
+          port = 8501
+        }
       }
     }
 
@@ -276,7 +286,17 @@ resource "google_cloud_run_v2_service" "green" {
 
       env {
         name  = "OAUTH_REDIRECT_URI"
-        value = "http://localhost:8080"
+        value = "http://localhost:8080/app"
+      }
+
+      startup_probe {
+        initial_delay_seconds = 0
+        timeout_seconds       = 240
+        period_seconds        = 240
+        failure_threshold     = 1
+        tcp_socket {
+          port = 8501
+        }
       }
     }
 
