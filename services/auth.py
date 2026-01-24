@@ -9,47 +9,15 @@ from urllib.parse import urlencode
 
 import httpx
 import streamlit as st
-from pydantic import BaseModel
 
 from services.const import GITHUB_AUTHORIZE_URL, GITHUB_TOKEN_URL, GITHUB_USER_URL
-from services.logging_config import log_structured
-from services.session_keys import (
-    ACCESS_TOKEN,
-    EMPLOYMENT_TYPE,
-    JOB_LOCATION,
-    JOB_PREFERENCES,
-    JOB_RESULTS,
-    JOB_TYPE,
-    OTHER_PREFERENCES,
-    PROFILE,
-    PROFILE_STATE,
-    QUOTA_STATUS,
-    REGEN_REPO_METADATA_LIST,
-    REGEN_SELECTED_REPOS,
-    REPO_METADATA_LIST,
-    SALARY_RANGE,
-    SELECTED_REPOS,
-    SESSION_ID,
-    SETTINGS_LOADED,
-    USER,
-    USER_SETTINGS,
-    WORK_STYLE,
-)
+from services.models import GitHubUser
+from services.session_keys import ACCESS_TOKEN, SESSION_ID, USER
 
 if TYPE_CHECKING:
     import extra_streamlit_components as stx
 
 logger = logging.getLogger(__name__)
-
-
-class GitHubUser(BaseModel):
-    """GitHubユーザー情報."""
-
-    id: int
-    login: str
-    name: str | None
-    email: str | None
-    avatar_url: str
 
 
 def get_oauth_config() -> tuple[str, str]:
@@ -149,11 +117,8 @@ def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bo
         st.query_params.clear()
         return False
 
-    # セッションに保存
-    st.session_state[USER] = user
-    st.session_state[ACCESS_TOKEN] = access_token
-
     # セッション永続化
+    session_id: str | None = None
     if cookie_manager is not None:
         from services.session import (
             delete_user_sessions,
@@ -168,7 +133,8 @@ def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bo
         session_id = generate_session_id()
         save_firestore_session(session_id, user, access_token)
         set_session_cookie(cookie_manager, session_id)
-        st.session_state[SESSION_ID] = session_id
+
+    _set_authenticated_session(user, access_token, session_id)
 
     # クエリパラメータをクリア
     st.query_params.clear()
@@ -186,98 +152,18 @@ def is_authenticated() -> bool:
     return get_current_user() is not None
 
 
-def revoke_github_token(access_token: str) -> None:
-    """GitHubのOAuthトークンを取り消し.
-
-    これにより、次回ログイン時にGitHubの認証画面が表示される。
-    """
-    client_id, client_secret = get_oauth_config()
-    if not client_id or not client_secret:
-        return
-
-    try:
-        # OAuth App認可自体を取り消す（トークンだけでなく認可全体）
-        httpx.request(
-            "DELETE",
-            f"https://api.github.com/applications/{client_id}/grant",
-            auth=(client_id, client_secret),
-            json={"access_token": access_token},
-        )
-    except Exception:
-        # 取り消し失敗は無視（ローカルログアウトは続行）
-        log_structured(
-            logger,
-            "Failed to revoke GitHub token",
-            level=logging.ERROR,
-            exc_info=True,
-        )
-
-
-def logout(cookie_manager: stx.CookieManager | None = None) -> None:
-    """ユーザーセッションをクリア.
-
-    Args:
-        cookie_manager: CookieManager（セッション削除用、Noneの場合はローカルのみクリア）
-    """
-    user = st.session_state.get(USER)
-    user_id = user.id if user else None
-    logger.info("Logout started: user_id=%s", user_id)
-
-    # GitHubトークンの取り消し（別アカウントでのログインを可能にする）
-    access_token = st.session_state.get(ACCESS_TOKEN)
-    if access_token:
-        revoke_github_token(access_token)
-        logger.info("GitHub token revoked: user_id=%s", user_id)
-
-    # 永続化セッションの削除
-    session_id = st.session_state.get(SESSION_ID)
-    if cookie_manager is not None and not session_id:
-        from services.session import get_session_cookie
-
-        session_id = get_session_cookie(cookie_manager)
-
-    if session_id and cookie_manager is not None:
-        from services.session import delete_firestore_session, delete_session_cookie
-
-        delete_firestore_session(session_id)
-        delete_session_cookie(cookie_manager)
-        logger.info("Session deleted: user_id=%s, session_id=%s", user_id, session_id)
-
-    # Firestoreからユーザーデータを削除（creditsは維持）
-    if user:
-        from services.cache import delete_all_user_data
-
-        delete_all_user_data(str(user.id))
-        logger.info(
-            "User data deleted from Firestore: user_id=%s (profiles, repos, settings)",
-            user_id,
-        )
-
-    # 認証情報 + ユーザー固有キャッシュ/状態をまとめてクリア
-    keys_to_clear = [
-        USER,
-        ACCESS_TOKEN,
-        SESSION_ID,
-        PROFILE_STATE,
-        REPO_METADATA_LIST,
-        SELECTED_REPOS,
-        REGEN_REPO_METADATA_LIST,
-        REGEN_SELECTED_REPOS,
-        SETTINGS_LOADED,
-        JOB_LOCATION,
-        SALARY_RANGE,
-        WORK_STYLE,
-        JOB_TYPE,
-        EMPLOYMENT_TYPE,
-        OTHER_PREFERENCES,
-    ]
-    for key in keys_to_clear:
-        st.session_state.pop(key, None)
-
-    for key in (PROFILE, USER_SETTINGS, QUOTA_STATUS, JOB_RESULTS, JOB_PREFERENCES):
-        st.session_state.pop(key, None)
-
-    logger.info("Logout completed: user_id=%s", user_id)
+def _set_authenticated_session(
+    user: GitHubUser,
+    access_token: str,
+    session_id: str | None = None,
+) -> None:
+    """認証済みセッションをsession_stateにセット."""
+    st.session_state[USER] = user
+    st.session_state[ACCESS_TOKEN] = access_token
+    if session_id:
+        st.session_state[SESSION_ID] = session_id
+    else:
+        st.session_state.pop(SESSION_ID, None)
 
 
 def render_login_button(redirect_uri: str) -> None:
@@ -329,11 +215,25 @@ def restore_session(cookie_manager: stx.CookieManager) -> bool:
 
     # セッション復元
     user, access_token = restore_session_from_dict(session_data)
-    st.session_state[USER] = user
-    st.session_state[ACCESS_TOKEN] = access_token
-    st.session_state[SESSION_ID] = session_id
+    _set_authenticated_session(user, access_token, session_id)
 
     # last_accessed_at を更新
     update_session_last_accessed(session_id)
 
     return True
+
+
+def ensure_authenticated(
+    redirect_uri: str,
+    cookie_manager: stx.CookieManager | None = None,
+) -> None:
+    """未認証ならGitHub認証にリダイレクト."""
+    if cookie_manager is not None:
+        restore_session(cookie_manager)
+
+    handle_oauth_callback(cookie_manager)
+
+    if not is_authenticated():
+        auth_url = get_authorization_url(redirect_uri)
+        st.html(f'<meta http-equiv="refresh" content="0; url={auth_url}">')
+        st.stop()

@@ -4,15 +4,15 @@ from unittest.mock import MagicMock, patch
 
 from langchain_core.output_parsers import PydanticOutputParser
 
-from services.github import RepoInfo
-from services.profile import (
+from services.models import (
     DeveloperProfile,
     JobFit,
     NotableProject,
+    RepoInfo,
     SkillAssessment,
     TechStack,
-    generate_profile,
 )
+from services.profile import generate_profile
 
 
 class TestPydanticModels:

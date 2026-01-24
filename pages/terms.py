@@ -2,24 +2,26 @@
 
 import streamlit as st
 
-st.title("利用規約")
+from components.legal import (
+    render_page_header,
+    render_section,
+    render_section_divider,
+)
 
-st.markdown("最終更新日: 2025年1月")
-
-st.divider()
+render_page_header("利用規約", "2025年1月")
 
 # サービス概要
-st.header("1. サービス概要")
+render_section("1. サービス概要")
 
 st.markdown("""
 本サービスは、GitHubの公開リポジトリ情報を分析し、
 AIを活用して求人情報を提案するサービスです。
 """)
 
-st.divider()
+render_section_divider()
 
 # 免責事項
-st.header("2. 免責事項")
+render_section("2. 免責事項")
 
 with st.container(border=True):
     st.subheader("AI生成コンテンツについて")
@@ -45,10 +47,10 @@ with st.container(border=True):
     - サービスの内容は予告なく変更・終了する場合があります
     """)
 
-st.divider()
+render_section_divider()
 
 # クレジット制度
-st.header("3. クレジット制度")
+render_section("3. クレジット制度")
 
 st.markdown("""
 - 新規登録時に無料クレジットが付与されます
@@ -59,10 +61,10 @@ st.markdown("""
 
 st.info("決済機能は現在準備中です")
 
-st.divider()
+render_section_divider()
 
 # 禁止事項
-st.header("4. 禁止事項")
+render_section("4. 禁止事項")
 
 st.markdown("""
 以下の行為を禁止します。
@@ -74,10 +76,10 @@ st.markdown("""
 - その他、運営者が不適切と判断する行為
 """)
 
-st.divider()
+render_section_divider()
 
 # 知的財産
-st.header("5. 知的財産")
+render_section("5. 知的財産")
 
 st.markdown("""
 - ユーザーのGitHubリポジトリの著作権はユーザーに帰属します
@@ -85,10 +87,10 @@ st.markdown("""
 - サービス自体の著作権は運営者に帰属します
 """)
 
-st.divider()
+render_section_divider()
 
 # 準拠法
-st.header("6. 準拠法")
+render_section("6. 準拠法")
 
 st.markdown("""
 本規約は日本法に準拠し、解釈されるものとします。

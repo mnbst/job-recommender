@@ -9,7 +9,6 @@ from typing import Any
 import extra_streamlit_components as stx
 from google.cloud.firestore_v1 import DocumentSnapshot
 
-from services.auth import GitHubUser
 from services.cache import get_firestore_client
 from services.const import (
     COOKIE_RETRY_INTERVAL,
@@ -18,6 +17,7 @@ from services.const import (
     SESSION_TTL_DAYS,
 )
 from services.logging_config import log_structured
+from services.models import GitHubUser
 
 logger = logging.getLogger(__name__)
 
