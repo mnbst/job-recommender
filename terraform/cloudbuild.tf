@@ -82,3 +82,17 @@ resource "google_project_iam_member" "cloudbuild_sa_user" {
   role    = "roles/iam.serviceAccountUser"
   member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
+
+# Compute Engine サービスアカウントにSecret Managerアクセス権限を付与
+resource "google_project_iam_member" "cloudbuild_secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
+
+# Compute Engine サービスアカウントにGCSオブジェクト管理権限を付与
+resource "google_project_iam_member" "cloudbuild_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
