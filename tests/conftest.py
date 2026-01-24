@@ -2,11 +2,12 @@
 
 import pytest
 
-from services.github import FileContent, RepoInfo
-from services.profile import (
+from services.models import (
     DeveloperProfile,
+    FileContent,
     JobFit,
     NotableProject,
+    RepoInfo,
     SkillAssessment,
     TechStack,
 )
