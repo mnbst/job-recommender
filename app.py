@@ -10,12 +10,14 @@ from dotenv import load_dotenv
 from components import render_sidebar
 from services.auth import (
     get_authorization_url,
+    get_current_user,
     handle_oauth_callback,
     is_authenticated,
     restore_session,
 )
 from services.logging_config import is_cloud_run, log_structured, setup_logging
 from services.session import get_cookie_manager
+from services.session_keys import LOGOUT_REQUESTED
 
 logger = logging.getLogger(__name__)
 
@@ -58,11 +60,21 @@ REDIRECT_URI = get_redirect_uri()
 # CookieManagerの取得（セッション永続化用）
 cookie_manager = get_cookie_manager()
 
-# セッション復元（Cookieから）
-restore_session(cookie_manager)
+logout_requested = st.session_state.pop(LOGOUT_REQUESTED, False)
+if logout_requested:
+    st.session_state[LOGOUT_REQUESTED] = False
+    user_id = get_current_user()
+    user_id = user_id.id if user_id else None
+    st.session_state.clear()
+    logger.info("Logout completed: user_id=%s", user_id)
+    st.rerun()
+else:
+    # セッション復元（Cookieから）
+    restore_session(cookie_manager)
 
-# OAuthコールバック処理
-handle_oauth_callback(cookie_manager)
+if not logout_requested:
+    # OAuthコールバック処理
+    handle_oauth_callback(cookie_manager)
 
 # 未認証の場合はGitHub認証にリダイレクト
 if not is_authenticated():

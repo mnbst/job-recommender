@@ -5,53 +5,9 @@ import os
 
 import vertexai
 from langchain_core.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field
 from vertexai.generative_models import GenerativeModel
 
-from services.github import RepoInfo
-
-
-class TechStack(BaseModel):
-    """技術スタック情報."""
-
-    languages: list[str] = Field(description="プログラミング言語リスト")
-    frameworks: list[str] = Field(description="フレームワークリスト")
-    infrastructure: list[str] = Field(description="インフラ技術リスト")
-
-
-class SkillAssessment(BaseModel):
-    """スキル評価."""
-
-    code_quality: str = Field(description="コード品質の評価コメント")
-    design_ability: str = Field(description="設計力の評価コメント")
-    completion_rate: str = Field(description="完遂力の評価コメント")
-
-
-class NotableProject(BaseModel):
-    """特筆すべきプロジェクト."""
-
-    name: str = Field(description="プロジェクト名")
-    highlight: str = Field(description="特筆点")
-
-
-class JobFit(BaseModel):
-    """マッチする求人の特徴."""
-
-    ideal_roles: list[str] = Field(description="マッチする職種リスト")
-    company_types: list[str] = Field(description="マッチする企業タイプ")
-    keywords: list[str] = Field(description="求人検索キーワード")
-
-
-class DeveloperProfile(BaseModel):
-    """開発者プロファイル."""
-
-    tech_stack: TechStack = Field(description="技術スタック")
-    expertise_areas: list[str] = Field(description="得意領域リスト")
-    skill_assessment: SkillAssessment = Field(description="スキル評価")
-    notable_projects: list[NotableProject] = Field(description="特筆すべきプロジェクト")
-    interests: list[str] = Field(description="興味・関心領域リスト")
-    job_fit: JobFit = Field(description="マッチする求人の特徴")
-    summary: str = Field(description="総合評価（2-3文）")
+from services.models import DeveloperProfile, RepoInfo
 
 
 def init_vertex_ai():

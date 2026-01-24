@@ -2,15 +2,14 @@
 
 from unittest.mock import MagicMock, patch
 
-from services.research import (
+from services.models import (
     JobPreferences,
     JobRecommendation,
     JobSearchResult,
     JobSource,
     MatchReason,
-    build_search_prompt,
-    search_jobs,
 )
+from services.research import build_search_prompt, search_jobs
 
 
 class TestDataClasses:
