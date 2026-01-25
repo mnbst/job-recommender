@@ -12,7 +12,8 @@ Python 3.11+ | Streamlit | Vertex AI (Gemini) | Perplexity AI (求人検索) | T
 
 ## Structure
 ```
-app.py           → Streamlit UIエントリーポイント
+router.py        → Streamlit UIエントリーポイント
+app.py           → 互換エントリーポイント（router.pyを呼び出し）
 services/
   auth.py        → GitHub OAuth認証
   github.py      → GitHub API (PyGithub) - RepoInfo取得
@@ -39,6 +40,7 @@ GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検
 | [project-architecture](./.claude/skills/project-architecture/SKILL.md) | 実装方針検討・デバッグ時 |
 | [troubleshooting](./.claude/skills/troubleshooting/SKILL.md) | 障害対応・エラー調査時 |
 | [github-oauth](./.claude/skills/github-oauth/SKILL.md) | OAuth認証関連の作業時 |
+| [testing](./.claude/skills/testing/SKILL.md) | テスト作成・実行時 |
 
 ## Agents（作業実行）
 | 作業 | エージェント |
@@ -58,7 +60,7 @@ GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検
 uv sync --no-dev
 
 # ローカル実行
-uv run streamlit run app.py
+uv run streamlit run router.py
 
 # テスト・Lint
 uv run pytest
@@ -114,21 +116,9 @@ echo -n "GREEN_CLIENT_SECRET" | gcloud secrets create green_github_oauth_client_
 ```
 
 ## Blue-Green Deployment
-| 環境 | Cloud Run | アクセス方法 | IAM | 用途 |
-|------|-----------|-------------|-----|------|
-| Blue | `job-recommender` | LB経由 (`https://<domain>`) | allUsers | 本番 |
-| Green | `job-recommender-green` | ローカルプロキシ (`./scripts/proxy-green.sh`) | 制限付き | 検証 |
-
-**デプロイフロー:**
-```
-1. devブランチにpush → Cloud BuildでGreen環境にデプロイ
-2. Green検証: ./scripts/proxy-green.sh でローカルからIAM認証でアクセス
-3. 問題なければmainにマージ → Blue環境にデプロイ
-4. 問題発見時: ./scripts/rollback.sh
-```
+詳細は [project-architecture](./.claude/skills/project-architecture/SKILL.md) を参照。
 
 **Green環境IAM設定** (`terraform.tfvars`):
 ```hcl
 cloud_run_invoker_members = ["user:your-email@gmail.com"]
 ```
-
