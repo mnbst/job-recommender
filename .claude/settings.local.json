@@ -24,7 +24,9 @@
       "Bash(gcloud builds describe:*)",
       "WebFetch(domain:docs.streamlit.io)",
       "WebFetch(domain:github.com)",
-      "Bash(uv run pytest:*)"
+      "Bash(uv run pytest:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)"
     ]
   },
   "hooks": {
