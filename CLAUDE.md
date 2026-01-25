@@ -114,18 +114,7 @@ echo -n "GREEN_CLIENT_SECRET" | gcloud secrets create green_github_oauth_client_
 ```
 
 ## Blue-Green Deployment
-| 環境 | Cloud Run | アクセス方法 | IAM | 用途 |
-|------|-----------|-------------|-----|------|
-| Blue | `job-recommender` | LB経由 (`https://<domain>`) | allUsers | 本番 |
-| Green | `job-recommender-green` | ローカルプロキシ (`./scripts/proxy-green.sh`) | 制限付き | 検証 |
-
-**デプロイフロー:**
-```
-1. devブランチにpush → Cloud BuildでGreen環境にデプロイ
-2. Green検証: ./scripts/proxy-green.sh でローカルからIAM認証でアクセス
-3. 問題なければmainにマージ → Blue環境にデプロイ
-4. 問題発見時: ./scripts/rollback.sh
-```
+詳細は [project-architecture](./.claude/skills/project-architecture/SKILL.md) を参照。
 
 **Green環境IAM設定** (`terraform.tfvars`):
 ```hcl

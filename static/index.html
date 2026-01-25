@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Job Recommender - GitHub経歴から最適な求人を提案</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // 認証済み（Cookie存在）なら /app へリダイレクト
+    if (document.cookie.includes('job_recommender_session=')) {
+      window.location.replace('/app');
+    }
+  </script>
 </head>
 <body>
   <header>

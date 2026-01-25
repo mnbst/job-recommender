@@ -18,12 +18,20 @@ allowed-tools: Read, Grep, Glob
 ## Infrastructure (Blue-Green)
 
 ```
-Internet → Cloud LB (HTTPS) → Cloud Run (job-recommender) [本番/Blue]
-                                        ↓
-                                  VPC Connector → Vertex AI / Perplexity AI
+                              ┌─ /        → GCS静的サイト (ランディングページ)
+Internet → Cloud LB (HTTPS) ──┤
+                              └─ /app/*   → Cloud Run (job-recommender) [Blue]
+                                                  ↓
+                                            VPC Connector → Vertex AI / Perplexity AI
 
-Local Dev → IAM認証プロキシ → Cloud Run (job-recommender-green) [検証/Green]
+Local Dev → IAM認証プロキシ → Cloud Run (job-recommender-green) [Green]
 ```
+
+| コンポーネント | リソース | 用途 |
+|--------------|---------|------|
+| ランディングページ | `gs://${project_id}-landing-page` | 静的HTML（Bot対策、CDN有効） |
+| アプリ (Blue) | `job-recommender` | 本番環境（LB経由、allUsers） |
+| アプリ (Green) | `job-recommender-green` | 検証環境（IAM認証、ローカルプロキシ） |
 
 認証: GitHub OAuth（Blue/Green別アプリ、GreenはローカルCallback）
 

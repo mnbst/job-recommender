@@ -67,7 +67,12 @@ if logout_requested:
     user_id = user_id.id if user_id else None
     st.session_state.clear()
     logger.info("Logout completed: user_id=%s", user_id)
-    st.rerun()
+    # ランディングページへリダイレクト
+    st.markdown(
+        '<meta http-equiv="refresh" content="0; url=/">',
+        unsafe_allow_html=True,
+    )
+    st.stop()
 else:
     # セッション復元（Cookieから）
     restore_session(cookie_manager)
