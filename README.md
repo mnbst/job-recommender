@@ -89,7 +89,7 @@ cp .env.local.example .env.local
 # .env.local を編集して各種APIキーを設定
 
 # 起動
-uv run streamlit run app.py
+uv run streamlit run router.py
 # http://localhost:8501
 ```
 
@@ -110,7 +110,8 @@ terraform apply
 
 ```
 .
-├── app.py                 # Streamlit エントリーポイント
+├── router.py              # Streamlit エントリーポイント
+├── app.py                 # 互換エントリーポイント（router.pyを呼び出し）
 ├── services/
 │   ├── github.py          # GitHub API連携
 │   ├── profile.py         # プロファイル生成
