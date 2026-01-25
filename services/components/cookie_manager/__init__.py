@@ -42,7 +42,7 @@ class CookieManager:
 
     def _on_cookies_change(self, cookies: dict[str, str] | None = None) -> None:
         """cookies状態変更時のコールバック."""
-        if cookies and isinstance(cookies, dict):
+        if isinstance(cookies, dict):
             self._cookies = cookies
             self._initialized = True
 
@@ -78,7 +78,7 @@ class CookieManager:
         # resultの戻り値も確認
         if result and isinstance(result, dict):
             cookies = result.get("cookies")
-            if cookies and isinstance(cookies, dict):
+            if isinstance(cookies, dict):
                 self._cookies = cookies
                 self._initialized = True
 
