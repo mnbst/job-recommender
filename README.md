@@ -29,9 +29,52 @@ GitHubユーザー名を入力するだけで、リポジトリから技術ス�
 | Frontend | Streamlit |
 | AI/LLM | Vertex AI (Gemini 2.5 Flash) |
 | 求人検索 | Perplexity AI (Sonar Pro) |
-| インフラ | GCP (Cloud Run + Load Balancer + IAP) |
+| インフラ | GCP (Cloud Run + Load Balancer) |
 | IaC | Terraform |
-| 認証 | Identity-Aware Proxy (IAP) |
+| 認証 | GitHub OAuth + Firestore セッション |
+
+## 認証フロー
+
+GitHub OAuth Appを使用した認証フローを採用しています。
+
+```
+┌─────────┐     ┌─────────┐     ┌─────────┐     ┌───────────┐
+│  User   │────▶│  App    │────▶│ GitHub  │────▶│ Firestore │
+│         │     │         │     │  OAuth  │     │ (session) │
+└─────────┘     └─────────┘     └─────────┘     └───────────┘
+    │               │               │                 │
+    │ 1. アクセス    │               │                 │
+    │──────────────▶│               │                 │
+    │               │ 2. GitHubへリダイレクト          │
+    │◀──────────────│──────────────▶│                 │
+    │               │               │                 │
+    │ 3. 認証・認可  │               │                 │
+    │──────────────────────────────▶│                 │
+    │               │               │                 │
+    │ 4. code付きでコールバック      │                 │
+    │◀──────────────────────────────│                 │
+    │               │               │                 │
+    │               │ 5. code→token交換               │
+    │               │──────────────▶│                 │
+    │               │◀──────────────│                 │
+    │               │               │                 │
+    │               │ 6. セッション保存                │
+    │               │────────────────────────────────▶│
+    │               │                                 │
+    │ 7. Cookie設定 │                                 │
+    │◀──────────────│                                 │
+```
+
+### セッション管理
+
+| 保存先 | 内容 | 有効期限 |
+|--------|------|----------|
+| Cookie | session_id (UUID) | 7日間 |
+| Firestore `sessions` | user_id, access_token, user_data | 7日間（最終アクセスから） |
+
+- 次回アクセス時はCookieのsession_idでFirestoreからセッションを復元
+- 1ユーザー1セッション（新規ログイン時に既存セッションを削除）
+- OAuth Appのトークンは無期限（GitHub App と異なりリフレッシュ不要）
 
 ## 工夫点
 

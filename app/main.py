@@ -2,24 +2,17 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 import streamlit as st
 
 from app.services.app_bootstrap import get_redirect_uri, initialize_session, setup_app
-from app.services.auth import (
-    get_authorization_url,
-    is_authenticated,
-    render_login_button,
-    should_auto_redirect_to_auth,
-)
-from app.services.session import has_session_cookie_in_headers
-from app.services.session_keys import SESSION_ID, USER
+from app.services.auth import ensure_authenticated
+from app.services.logging_config import get_logger
 from app.services.streamlit_components.cookie_manager import get_cookie_manager
 from app.ui import render_sidebar
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _build_pages() -> tuple[Any, dict[str, list[Any]]]:
@@ -53,39 +46,15 @@ def _is_logout_page(pg: Any, logout_page: Any) -> bool:
     )
 
 
-def _is_oauth_callback() -> bool:
-    """OAuthコールバック判定."""
-    return bool(st.query_params.get("code"))
-
-
 def run() -> None:
     """アプリ起動処理（設定・認証・ナビゲーション）。"""
     setup_app()
 
-    # ===== Early Cookie Detection (Server-Side) =====
-    # HTTPヘッダーから直接Cookieを読み取り、JS初期化を待たずに即座に判定
-    has_cookie = has_session_cookie_in_headers()
-    logger.info("Session cookie in headers: %s", has_cookie)
-
-    # Cookie無し & OAuthコールバックでもない → 早期終了
-    if not has_cookie and not _is_oauth_callback():
-        logger.info("Early stop: no cookie and not OAuth callback")
-        redirect_uri = get_redirect_uri()
-        if should_auto_redirect_to_auth():
-            logger.info("Auto-redirecting to GitHub OAuth")
-            auth_url = get_authorization_url(redirect_uri)
-            st.markdown(
-                f'<meta http-equiv="refresh" content="0; url={auth_url}">',
-                unsafe_allow_html=True,
-            )
-        else:
-            logger.info("Showing login button")
-            st.title("Job Recommender")
-            st.info("GitHubアカウントでログインしてください。")
-            render_login_button(redirect_uri)
+    # LPリダイレクト中は何も表示せずに停止（リダイレクト完了待ち）
+    if st.session_state.get("redirect_to_lp", False):
         st.stop()
 
-    # ===== 以降は Cookie有り or OAuthコールバック =====
+    # セッション初期化とページ構成
     redirect_uri = get_redirect_uri()
     cookie_manager = get_cookie_manager()
     initialize_session(cookie_manager)
@@ -94,28 +63,14 @@ def run() -> None:
     pg = st.navigation(pages, position="hidden")
     is_logout_page = _is_logout_page(pg, logout_page)
 
-    if not is_authenticated() and not is_logout_page:
-        logger.warning(
-            "Not authenticated after session init - USER: %s, SESSION_ID: %s",
-            st.session_state.get(USER),
-            st.session_state.get(SESSION_ID),
-        )
-        if should_auto_redirect_to_auth():
-            auth_url = get_authorization_url(redirect_uri)
-            st.markdown(
-                f'<meta http-equiv="refresh" content="0; url={auth_url}">',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.title("Job Recommender")
-            st.info("GitHubアカウントでログインしてください。")
-            render_login_button(redirect_uri)
-        st.stop()
-
+    # 認証チェック（未認証なら自動リダイレクト）
     if not is_logout_page:
-        render_sidebar(cookie_manager, redirect_uri)
+        ensure_authenticated(redirect_uri, cookie_manager)
 
-    logger.info("Running page: %s", getattr(pg, "title", "unknown"))
+    # サイドバー表示（認証済みのみ）
+    if not is_logout_page:
+        render_sidebar(cookie_manager)
+
     pg.run()
 
 

@@ -358,12 +358,6 @@ def extract_repo_info(repo: Repository) -> RepoInfo:
     )
 
 
-def analyze_github_profile(username: str, repo_limit: int = 10) -> list[RepoInfo]:
-    """Analyze a GitHub user's profile and return repository information."""
-    repos = get_user_repos(username, limit=repo_limit)
-    return [extract_repo_info(repo) for repo in repos]
-
-
 def analyze_selected_repos(username: str, repo_names: list[str]) -> list[RepoInfo]:
     """Analyze selected repositories and return repository information.
 

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import logging
-import os
 
 import httpx
 import streamlit as st
 
+from app.services.auth import get_oauth_config
 from app.services.cache import delete_all_user_data
 from app.services.logging_config import log_structured
 from app.services.session import (
@@ -23,19 +23,12 @@ from app.services.session_keys import (
 logger = logging.getLogger(__name__)
 
 
-def _get_oauth_config() -> tuple[str, str]:
-    """環境変数からOAuthクレデンシャルを取得."""
-    client_id = os.environ.get("GITHUB_OAUTH_CLIENT_ID", "")
-    client_secret = os.environ.get("GITHUB_OAUTH_CLIENT_SECRET", "")
-    return client_id, client_secret
-
-
 def revoke_github_token(access_token: str) -> None:
     """GitHubのOAuthトークンを取り消し.
 
     これにより、次回ログイン時にGitHubの認証画面が表示される。
     """
-    client_id, client_secret = _get_oauth_config()
+    client_id, client_secret = get_oauth_config()
     if not client_id or not client_secret:
         return
 

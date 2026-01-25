@@ -30,15 +30,6 @@ def get_session_cookie() -> str | None:
     return CookieManager.get_from_headers(SESSION_COOKIE_NAME)
 
 
-def has_session_cookie_in_headers() -> bool:
-    """HTTPヘッダーにセッションCookieが存在するか確認.
-
-    Returns:
-        True: セッションCookieが存在する、False: 存在しない
-    """
-    return get_session_cookie() is not None
-
-
 def set_session_cookie(cookie_manager: CookieManager, session_id: str) -> None:
     """Cookieにsession_idを設定（7日間有効）.
 
