@@ -1,18 +1,16 @@
 """Session persistence service using Firestore and Cookies."""
 
 import logging
-import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import extra_streamlit_components as stx
 from google.cloud.firestore_v1 import DocumentSnapshot
 
 from services.cache import get_firestore_client
+from services.components.cookie_manager import CookieManager
+from services.components.cookie_manager import get_cookie_manager as get_cookie_manager
 from services.const import (
-    COOKIE_RETRY_INTERVAL,
-    MAX_COOKIE_RETRIES,
     SESSION_COOKIE_NAME,
     SESSION_TTL_DAYS,
 )
@@ -22,34 +20,19 @@ from services.models import GitHubUser
 logger = logging.getLogger(__name__)
 
 
-def get_cookie_manager() -> stx.CookieManager:
-    """CookieManagerインスタンスを取得."""
-    return stx.CookieManager()
-
-
-def get_session_cookie(cookie_manager: stx.CookieManager) -> str | None:
-    """Cookieからsession_idを取得（retry付き）.
-
-    CookieManagerは非同期で動作するため、初回呼び出しでNoneが返る可能性あり。
-    ループでリトライしてコンポーネントマウントを待つ。
+def get_session_cookie(cookie_manager: CookieManager) -> str | None:
+    """Cookieからsession_idを取得.
 
     Args:
         cookie_manager: CookieManagerインスタンス
 
     Returns:
-        session_id または None（取得失敗 or 未設定）
+        session_id または None（未設定の場合）
     """
-    for _ in range(MAX_COOKIE_RETRIES):
-        session_id = cookie_manager.get(cookie=SESSION_COOKIE_NAME)
-        if session_id is not None:
-            return session_id
-        time.sleep(COOKIE_RETRY_INTERVAL)
-
-    # retry上限到達 → Noneを返す（Cookieなしとして扱う）
-    return None
+    return cookie_manager.get(cookie=SESSION_COOKIE_NAME)
 
 
-def set_session_cookie(cookie_manager: stx.CookieManager, session_id: str) -> None:
+def set_session_cookie(cookie_manager: CookieManager, session_id: str) -> None:
     """Cookieにsession_idを設定（7日間有効）.
 
     Args:
@@ -64,7 +47,7 @@ def set_session_cookie(cookie_manager: stx.CookieManager, session_id: str) -> No
     )
 
 
-def delete_session_cookie(cookie_manager: stx.CookieManager) -> None:
+def delete_session_cookie(cookie_manager: CookieManager) -> None:
     """Cookieからsession_idを削除.
 
     Args:
