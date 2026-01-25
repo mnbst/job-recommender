@@ -2,15 +2,16 @@
 
 import streamlit as st
 
-from app.services.auth import is_authenticated
+from app.services.session import delete_session_cookie
+from app.services.streamlit_components.cookie_manager import get_cookie_manager
 from app.services.streamlit_components.redirect import redirect
 
 
 def render_logout_page() -> None:
     """ログアウトページを描画."""
-    if is_authenticated():
-        st.switch_page("pages/home.py")
-        st.stop()
+    # Cookie削除を確実に実行（ログアウト後の再アクセスで認証を要求）
+    cookie_manager = get_cookie_manager(key="cookie_manager_logout")
+    delete_session_cookie(cookie_manager)
 
     st.title("ログアウトしました")
     st.caption("またのご利用をお待ちしています。")
