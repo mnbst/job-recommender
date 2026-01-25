@@ -27,6 +27,12 @@ def get_oauth_config() -> tuple[str, str]:
     return client_id, client_secret
 
 
+def should_auto_redirect_to_auth() -> bool:
+    """ローカル/Greenのみ自動リダイレクトを許可する。"""
+    k_service = os.environ.get("K_SERVICE", "")
+    return (not k_service) or k_service.endswith("-green")
+
+
 def get_authorization_url(redirect_uri: str) -> str:
     """GitHub OAuth認可URLを生成."""
     client_id, _ = get_oauth_config()
@@ -227,13 +233,14 @@ def ensure_authenticated(
     redirect_uri: str,
     cookie_manager: CookieManager | None = None,
 ) -> None:
-    """未認証ならGitHub認証にリダイレクト."""
+    """未認証なら処理を停止する（ローカル/Greenのみ自動リダイレクト）。"""
     if cookie_manager is not None:
         restore_session(cookie_manager)
 
     handle_oauth_callback(cookie_manager)
 
     if not is_authenticated():
-        auth_url = get_authorization_url(redirect_uri)
-        st.html(f'<meta http-equiv="refresh" content="0; url={auth_url}">')
+        if should_auto_redirect_to_auth():
+            auth_url = get_authorization_url(redirect_uri)
+            st.html(f'<meta http-equiv="refresh" content="0; url={auth_url}">')
         st.stop()
