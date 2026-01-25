@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import TYPE_CHECKING, Any
 
 import streamlit as st
 
@@ -17,6 +18,9 @@ from services.auth import (
 from services.logging_config import log_structured
 from services.session import get_cookie_manager, get_session_cookie
 
+if TYPE_CHECKING:
+    from services.components.cookie_manager import CookieManager
+
 _COOKIE_WAIT_ATTEMPTS_KEY = "cookie_wait_attempts"
 _COOKIE_WAIT_MAX = 3
 _COOKIE_WAIT_INTERVAL_SECONDS = 0.2
@@ -24,7 +28,7 @@ _COOKIE_WAIT_INTERVAL_SECONDS = 0.2
 logger = logging.getLogger(__name__)
 
 
-def _build_pages():
+def _build_pages() -> tuple[Any, dict[str, list[Any]]]:
     """画面一覧（ナビゲーション構成）を組み立てる。"""
     logout_page = st.Page("pages/logout.py", title="ログアウト", icon="🚪")
     pages = {
@@ -41,7 +45,7 @@ def _build_pages():
     return logout_page, pages
 
 
-def _is_logout_page(pg, logout_page) -> bool:
+def _is_logout_page(pg: Any, logout_page: Any) -> bool:
     """ログアウトページ判定（ページオブジェクトの差異に対応）。"""
     if pg == logout_page:
         return True
@@ -55,7 +59,7 @@ def _is_logout_page(pg, logout_page) -> bool:
     )
 
 
-def _maybe_wait_for_cookie(cookie_manager) -> None:
+def _maybe_wait_for_cookie(cookie_manager: CookieManager) -> None:
     """Cookie反映待ち（コールドスタート対策）."""
     if is_authenticated():
         st.session_state.pop(_COOKIE_WAIT_ATTEMPTS_KEY, None)
@@ -83,6 +87,7 @@ def _maybe_wait_for_cookie(cookie_manager) -> None:
     st.session_state[_COOKIE_WAIT_ATTEMPTS_KEY] = attempts + 1
     with st.spinner("セッションを復元中..."):
         time.sleep(_COOKIE_WAIT_INTERVAL_SECONDS)
+    # Client-side cookie取得のための限定的なrerun
     st.rerun()
 
 
