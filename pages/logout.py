@@ -15,6 +15,8 @@ def render_logout_page() -> None:
     st.title("ログアウトしました")
     st.caption("またのご利用をお待ちしています。")
     if st.button("トップへ戻る", type="tertiary"):
+        st.session_state["redirect_to_lp"] = True
+    if st.session_state.get("redirect_to_lp"):
         redirect("https://job-recommender.com/")
 
 

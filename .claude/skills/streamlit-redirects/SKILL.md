@@ -30,6 +30,19 @@ if st.button("トップへ戻る", type="primary"):
     redirect("https://job-recommender.com/")
 ```
 
+## クリックが2回必要になる場合
+- **原因**: v2コンポーネントの描画タイミングが遅く、ボタン押下と同一レンダリング内でJSが走らない
+- **対策**: クリック状態を`st.session_state`に保持して次のレンダリングでも`redirect()`を呼ぶ
+
+```python
+from services.components.redirect import redirect
+
+if st.button("トップへ戻る", type="tertiary"):
+    st.session_state["redirect_to_lp"] = True
+if st.session_state.get("redirect_to_lp"):
+    redirect("https://job-recommender.com/")
+```
+
 ## 追加調査チェックリスト
 - DevToolsで`<meta>`がDOMに残っているか確認
 - Response headerの`Content-Security-Policy`で`script-src`/`frame-ancestors`を確認
