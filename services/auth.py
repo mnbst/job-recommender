@@ -15,7 +15,7 @@ from services.models import GitHubUser
 from services.session_keys import ACCESS_TOKEN, SESSION_ID, USER
 
 if TYPE_CHECKING:
-    import extra_streamlit_components as stx
+    from services.components.cookie_manager import CookieManager
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,12 @@ def get_oauth_config() -> tuple[str, str]:
     client_id = os.environ.get("GITHUB_OAUTH_CLIENT_ID", "")
     client_secret = os.environ.get("GITHUB_OAUTH_CLIENT_SECRET", "")
     return client_id, client_secret
+
+
+def should_auto_redirect_to_auth() -> bool:
+    """ローカル/Greenのみ自動リダイレクトを許可する。"""
+    k_service = os.environ.get("K_SERVICE", "")
+    return (not k_service) or k_service.endswith("-green")
 
 
 def get_authorization_url(redirect_uri: str) -> str:
@@ -81,7 +87,7 @@ def get_github_user(access_token: str) -> GitHubUser | None:
     return None
 
 
-def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bool:
+def handle_oauth_callback(cookie_manager: CookieManager | None = None) -> bool:
     """OAuthコールバックを処理してユーザーを認証.
 
     Args:
@@ -178,7 +184,7 @@ def render_login_button(redirect_uri: str) -> None:
     st.link_button("GitHubでログイン", auth_url, use_container_width=True)
 
 
-def restore_session(cookie_manager: stx.CookieManager) -> bool:
+def restore_session(cookie_manager: CookieManager) -> bool:
     """Cookieからセッションを復元.
 
     起動時に呼び出し、Cookieに有効なセッションがあれば復元する。
@@ -225,15 +231,16 @@ def restore_session(cookie_manager: stx.CookieManager) -> bool:
 
 def ensure_authenticated(
     redirect_uri: str,
-    cookie_manager: stx.CookieManager | None = None,
+    cookie_manager: CookieManager | None = None,
 ) -> None:
-    """未認証ならGitHub認証にリダイレクト."""
+    """未認証なら処理を停止する（ローカル/Greenのみ自動リダイレクト）。"""
     if cookie_manager is not None:
         restore_session(cookie_manager)
 
     handle_oauth_callback(cookie_manager)
 
     if not is_authenticated():
-        auth_url = get_authorization_url(redirect_uri)
-        st.html(f'<meta http-equiv="refresh" content="0; url={auth_url}">')
+        if should_auto_redirect_to_auth():
+            auth_url = get_authorization_url(redirect_uri)
+            st.html(f'<meta http-equiv="refresh" content="0; url={auth_url}">')
         st.stop()

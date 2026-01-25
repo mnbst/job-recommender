@@ -30,6 +30,7 @@ DEPENDENCY_FILES = [
 MAIN_FILE_PATTERNS = [
     "main.py",
     "app.py",
+    "router.py",
     "index.py",
     "index.js",
     "index.ts",
