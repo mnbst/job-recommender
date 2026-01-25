@@ -1,0 +1,24 @@
+"""ログアウトページ."""
+
+import streamlit as st
+
+from app.services.auth import is_authenticated
+from app.services.streamlit_components.redirect import redirect
+
+
+def render_logout_page() -> None:
+    """ログアウトページを描画."""
+    if is_authenticated():
+        st.switch_page("pages/home.py")
+        st.stop()
+
+    st.title("ログアウトしました")
+    st.caption("またのご利用をお待ちしています。")
+    if st.button("トップへ戻る", type="tertiary"):
+        st.session_state["redirect_to_lp"] = True
+    if st.session_state.get("redirect_to_lp"):
+        redirect("https://job-recommender.com/")
+        st.stop()
+
+
+render_logout_page()
