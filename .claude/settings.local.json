@@ -12,7 +12,18 @@
       "Bash(jq:*)",
       "Bash(uv run ruff:*)",
       "Bash(git log:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(gcloud builds list:*)",
+      "Bash(gcloud run services describe:*)",
+      "Bash(gcloud builds triggers list:*)",
+      "Bash(gcloud run revisions list:*)",
+      "Bash(terraform state list:*)",
+      "Bash(gcloud builds triggers describe:*)",
+      "Bash(gcloud builds log:*)",
+      "Bash(gcloud run revisions describe:*)",
+      "Bash(gcloud builds describe:*)",
+      "WebFetch(domain:docs.streamlit.io)",
+      "WebFetch(domain:github.com)"
     ]
   },
   "hooks": {
