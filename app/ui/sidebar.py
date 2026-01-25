@@ -2,13 +2,13 @@
 
 import streamlit as st
 
-from app.services.auth import get_current_user, is_authenticated, render_login_button
+from app.services.auth import get_current_user, is_authenticated
 from app.services.logout import logout
 from app.services.quota import get_quota_status
 from app.ui.credits import render_remaining_credits_caption
 
 
-def render_sidebar(cookie_manager, redirect_uri: str) -> None:
+def render_sidebar(cookie_manager) -> None:
     """サイドバーを描画."""
     with st.sidebar:
         if is_authenticated():
@@ -37,6 +37,3 @@ def render_sidebar(cookie_manager, redirect_uri: str) -> None:
                     on_click=logout,
                     args=(cookie_manager,),
                 )
-        else:
-            st.info("GitHubでログインして始めましょう")
-            render_login_button(redirect_uri)

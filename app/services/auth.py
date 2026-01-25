@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import os
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
@@ -11,6 +10,7 @@ import httpx
 import streamlit as st
 
 from app.services.const import GITHUB_AUTHORIZE_URL, GITHUB_TOKEN_URL, GITHUB_USER_URL
+from app.services.logging_config import get_logger
 from app.services.models import GitHubUser
 from app.services.session import (
     delete_session_cookie,
@@ -24,11 +24,12 @@ from app.services.session import (
     update_session_last_accessed,
 )
 from app.services.session_keys import ACCESS_TOKEN, SESSION_ID, USER
+from app.services.streamlit_components.redirect import redirect
 
 if TYPE_CHECKING:
     from app.services.streamlit_components.cookie_manager import CookieManager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_oauth_config() -> tuple[str, str]:
@@ -36,12 +37,6 @@ def get_oauth_config() -> tuple[str, str]:
     client_id = os.environ.get("GITHUB_OAUTH_CLIENT_ID", "")
     client_secret = os.environ.get("GITHUB_OAUTH_CLIENT_SECRET", "")
     return client_id, client_secret
-
-
-def should_auto_redirect_to_auth() -> bool:
-    """ローカル/Greenのみ自動リダイレクトを許可する。"""
-    k_service = os.environ.get("K_SERVICE", "")
-    return (not k_service) or k_service.endswith("-green")
 
 
 def get_authorization_url(redirect_uri: str) -> str:
@@ -107,15 +102,17 @@ def handle_oauth_callback(cookie_manager: CookieManager | None = None) -> bool:
     Returns:
         認証成功時はTrue、それ以外はFalse
     """
-    # 既に認証済みの場合はスキップ
-    if is_authenticated():
-        return True
-
     query_params = st.query_params
-
-    # OAuthコールバックかチェック
     code = query_params.get("code")
 
+    # 既に認証済みの場合、クエリパラメータをクリアしてrerun
+    if is_authenticated():
+        if code:
+            st.query_params.clear()
+            st.rerun()  # 明示的にrerunをトリガー
+        return True
+
+    # OAuthコールバックかチェック
     if not code:
         return False
 
@@ -145,9 +142,7 @@ def handle_oauth_callback(cookie_manager: CookieManager | None = None) -> bool:
         set_session_cookie(cookie_manager, session_id)
 
     _set_authenticated_session(user, access_token, session_id)
-
-    # クエリパラメータをクリア
-    st.query_params.clear()
+    logger.info("OAuth login successful")
 
     return True
 
@@ -174,18 +169,6 @@ def _set_authenticated_session(
         st.session_state[SESSION_ID] = session_id
     else:
         st.session_state.pop(SESSION_ID, None)
-
-
-def render_login_button(redirect_uri: str) -> None:
-    """GitHubログインボタンを表示."""
-    client_id, _ = get_oauth_config()
-
-    if not client_id:
-        st.warning("GitHub OAuthが設定されていません。")
-        return
-
-    auth_url = get_authorization_url(redirect_uri)
-    st.link_button("GitHubでログイン", auth_url, use_container_width=True)
 
 
 def restore_session(cookie_manager: CookieManager) -> bool:
@@ -229,14 +212,13 @@ def ensure_authenticated(
     redirect_uri: str,
     cookie_manager: CookieManager | None = None,
 ) -> None:
-    """未認証なら処理を停止する（ローカル/Greenのみ自動リダイレクト）。"""
+    """未認証なら自動リダイレクトして処理を停止する。"""
     if cookie_manager is not None:
         restore_session(cookie_manager)
 
     handle_oauth_callback(cookie_manager)
 
     if not is_authenticated():
-        if should_auto_redirect_to_auth():
-            auth_url = get_authorization_url(redirect_uri)
-            st.html(f'<meta http-equiv="refresh" content="0; url={auth_url}">')
+        auth_url = get_authorization_url(redirect_uri)
+        redirect(auth_url, key="auth_redirect")
         st.stop()

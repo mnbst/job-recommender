@@ -14,15 +14,16 @@ _redirect_component = components.component(
 )
 
 
-def redirect(url: str, *, key: str = "redirect") -> Any:
+def redirect(url: str, *, delete_cookie: bool = False, key: str = "redirect") -> Any:
     """指定URLへ同一タブでリダイレクト.
 
     Args:
         url: 遷移先URL
+        delete_cookie: リダイレクト前にjob_recommender_session Cookieを削除するか
         key: コンポーネントの一意キー
     """
     return _redirect_component(
-        data={"url": url},
+        data={"url": url, "delete_cookie": delete_cookie},
         key=key,
         default=None,
     )
