@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from app.services.auth import get_current_user, handle_oauth_callback, restore_session
 from app.services.headers_utils import get_header
 from app.services.logging_config import is_cloud_run, setup_logging
+from app.services.session import delete_session_cookie
 from app.services.session_keys import LOGOUT_REQUESTED
 
 logger = logging.getLogger(__name__)
@@ -45,9 +46,12 @@ def initialize_session(cookie_manager) -> bool:
     if logout_requested:
         user_id = get_current_user()
         user_id = user_id.id if user_id else None
+        # Cookieを削除（次回アクセス時に認証を要求）
+        delete_session_cookie(cookie_manager)
         st.session_state.clear()
         logger.info("Logout completed: user_id=%s", user_id)
         st.switch_page("pages/logout.py")
+        st.stop()
         return True
 
     restore_session(cookie_manager)
