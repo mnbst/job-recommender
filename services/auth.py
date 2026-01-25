@@ -15,7 +15,7 @@ from services.models import GitHubUser
 from services.session_keys import ACCESS_TOKEN, SESSION_ID, USER
 
 if TYPE_CHECKING:
-    import extra_streamlit_components as stx
+    from services.components.cookie_manager import CookieManager
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ def get_github_user(access_token: str) -> GitHubUser | None:
     return None
 
 
-def handle_oauth_callback(cookie_manager: stx.CookieManager | None = None) -> bool:
+def handle_oauth_callback(cookie_manager: CookieManager | None = None) -> bool:
     """OAuthコールバックを処理してユーザーを認証.
 
     Args:
@@ -178,7 +178,7 @@ def render_login_button(redirect_uri: str) -> None:
     st.link_button("GitHubでログイン", auth_url, use_container_width=True)
 
 
-def restore_session(cookie_manager: stx.CookieManager) -> bool:
+def restore_session(cookie_manager: CookieManager) -> bool:
     """Cookieからセッションを復元.
 
     起動時に呼び出し、Cookieに有効なセッションがあれば復元する。
@@ -225,7 +225,7 @@ def restore_session(cookie_manager: stx.CookieManager) -> bool:
 
 def ensure_authenticated(
     redirect_uri: str,
-    cookie_manager: stx.CookieManager | None = None,
+    cookie_manager: CookieManager | None = None,
 ) -> None:
     """未認証ならGitHub認証にリダイレクト."""
     if cookie_manager is not None:

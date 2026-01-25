@@ -39,6 +39,7 @@ GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検
 | [project-architecture](./.claude/skills/project-architecture/SKILL.md) | 実装方針検討・デバッグ時 |
 | [troubleshooting](./.claude/skills/troubleshooting/SKILL.md) | 障害対応・エラー調査時 |
 | [github-oauth](./.claude/skills/github-oauth/SKILL.md) | OAuth認証関連の作業時 |
+| [testing](./.claude/skills/testing/SKILL.md) | テスト作成・実行時 |
 
 ## Agents（作業実行）
 | 作業 | エージェント |
