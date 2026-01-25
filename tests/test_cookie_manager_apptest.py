@@ -79,7 +79,9 @@ class TestCookieManagerWithAppTest:
     @pytest.fixture
     def mock_cookie_component(self):
         """カスタムコンポーネントのモック."""
-        with patch("app.services.streamlit_components.cookie_manager._cookie_component") as mock:
+        with patch(
+            "app.services.streamlit_components.cookie_manager._cookie_component"
+        ) as mock:
             mock.return_value = {"cookies": {}, "result": None}
             yield mock
 
@@ -138,7 +140,9 @@ class TestSessionIntegrationWithAppTest:
     @pytest.fixture
     def mock_cookie_component(self):
         """カスタムコンポーネントのモック."""
-        with patch("app.services.streamlit_components.cookie_manager._cookie_component") as mock:
+        with patch(
+            "app.services.streamlit_components.cookie_manager._cookie_component"
+        ) as mock:
             mock.return_value = {"cookies": {}, "result": None}
             yield mock
 
