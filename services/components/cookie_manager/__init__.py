@@ -43,6 +43,7 @@ class CookieManager:
     def _on_cookies_change(self, cookies: dict[str, str] | None = None) -> None:
         """cookies状態変更時のコールバック."""
         if isinstance(cookies, dict):
+            # 空dictでも初期化済みとみなす（同一keyの重複生成を防ぐ）
             self._cookies = cookies
             self._initialized = True
 
@@ -79,6 +80,7 @@ class CookieManager:
         if result and isinstance(result, dict):
             cookies = result.get("cookies")
             if isinstance(cookies, dict):
+                # 空dictでも初期化済みとみなす（同一keyの重複生成を防ぐ）
                 self._cookies = cookies
                 self._initialized = True
 
