@@ -23,7 +23,8 @@
       "Bash(gcloud run revisions describe:*)",
       "Bash(gcloud builds describe:*)",
       "WebFetch(domain:docs.streamlit.io)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(uv run pytest:*)"
     ]
   },
   "hooks": {

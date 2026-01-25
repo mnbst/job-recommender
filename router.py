@@ -13,6 +13,7 @@ from services.app_bootstrap import get_redirect_uri, initialize_session, setup_a
 from services.auth import (
     get_authorization_url,
     is_authenticated,
+    render_login_button,
     should_auto_redirect_to_auth,
 )
 from services.logging_config import log_structured
@@ -59,30 +60,43 @@ def _is_logout_page(pg: Any, logout_page: Any) -> bool:
     )
 
 
-def _maybe_wait_for_cookie(cookie_manager: CookieManager) -> None:
-    """Cookie反映待ち（コールドスタート対策）."""
+def _maybe_wait_for_cookie(cookie_manager: CookieManager) -> bool:
+    """Cookie反映待ち（コールドスタート対策）.
+
+    Returns:
+        True: 認証済みまたはCookie取得成功、False: 待機継続が必要
+    """
     if is_authenticated():
         st.session_state.pop(_COOKIE_WAIT_ATTEMPTS_KEY, None)
-        return
+        return True
 
     attempts = st.session_state.get(_COOKIE_WAIT_ATTEMPTS_KEY, 0)
     if attempts >= _COOKIE_WAIT_MAX:
         log_structured(
             logger,
-            "Cookie wait attempts exceeded",
+            "Cookie wait attempts exceeded, proceeding to login flow",
             level=logging.WARNING,
             attempts=attempts,
         )
-        return
+        st.session_state.pop(_COOKIE_WAIT_ATTEMPTS_KEY, None)
+        return False  # ログインフローへ進む
 
-    # Cookieコンポーネントを先にマウントして取得を促す
+    # Cookieコンポーネントを明示的にレンダリングして取得を促す
+    cookie_manager._render()
     session_id = get_session_cookie(cookie_manager)
+
     log_structured(
         logger,
         "Cookie wait attempt",
         attempts=attempts + 1,
         session_id_present=bool(session_id),
+        initialized=cookie_manager._initialized,
     )
+
+    # Cookie取得成功した場合は待機終了
+    if session_id:
+        st.session_state.pop(_COOKIE_WAIT_ATTEMPTS_KEY, None)
+        return True
 
     st.session_state[_COOKIE_WAIT_ATTEMPTS_KEY] = attempts + 1
     with st.spinner("セッションを復元中..."):
@@ -112,6 +126,11 @@ def run() -> None:
                 f'<meta http-equiv="refresh" content="0; url={auth_url}">',
                 unsafe_allow_html=True,
             )
+        else:
+            # フォールバック: ログインボタンを表示（コールドスタート対策）
+            st.title("Job Recommender")
+            st.info("GitHubアカウントでログインしてください。")
+            render_login_button(redirect_uri)
         st.stop()
 
     if not is_logout_page:
