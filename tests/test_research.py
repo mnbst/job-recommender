@@ -1,15 +1,15 @@
-"""Tests for services/research.py."""
+"""Tests for app/services/research.py."""
 
 from unittest.mock import MagicMock, patch
 
-from services.models import (
+from app.services.models import (
     JobPreferences,
     JobRecommendation,
     JobSearchResult,
     JobSource,
     MatchReason,
 )
-from services.research import build_search_prompt, search_jobs
+from app.services.research import build_search_prompt, search_jobs
 
 
 class TestDataClasses:
@@ -117,7 +117,7 @@ class TestSearchJobs:
         assert "PERPLEXITY_API_KEY" in (result.error or "")
         assert result.recommendations == []
 
-    @patch("services.research.Perplexity")
+    @patch("app.services.research.Perplexity")
     def test_search_jobs_success(
         self,
         mock_perplexity_class: MagicMock,
@@ -162,7 +162,7 @@ class TestSearchJobs:
         assert result.recommendations[0].job_title == "Senior Python Engineer"
         assert result.recommendations[0].company == "Tech Corp"
 
-    @patch("services.research.Perplexity")
+    @patch("app.services.research.Perplexity")
     def test_search_jobs_api_error(
         self,
         mock_perplexity_class: MagicMock,
@@ -178,7 +178,7 @@ class TestSearchJobs:
         assert "API connection failed" in (result.error or "")
         assert result.recommendations == []
 
-    @patch("services.research.Perplexity")
+    @patch("app.services.research.Perplexity")
     def test_search_jobs_empty_recommendations(
         self,
         mock_perplexity_class: MagicMock,

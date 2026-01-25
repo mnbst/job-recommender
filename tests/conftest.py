@@ -2,7 +2,7 @@
 
 import pytest
 
-from services.models import (
+from app.services.models import (
     DeveloperProfile,
     FileContent,
     JobFit,

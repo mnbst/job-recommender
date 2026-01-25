@@ -12,13 +12,11 @@ Python 3.11+ | Streamlit | Vertex AI (Gemini) | Perplexity AI (求人検索) | T
 
 ## Structure
 ```
-router.py        → Streamlit UIエントリーポイント
-app.py           → 互換エントリーポイント（router.pyを呼び出し）
-services/
-  auth.py        → GitHub OAuth認証
-  github.py      → GitHub API (PyGithub) - RepoInfo取得
-  profile.py     → Vertex AI Gemini - プロファイル生成
-  research.py    → Perplexity AI - 求人検索 + マッチング分析
+app/
+  main.py        → Streamlit UIエントリーポイント
+  pages/         → Streamlitページ
+  ui/            → UIコンポーネント
+  services/      → ドメインロジック
 terraform/       → インフラ定義 (Cloud Run + LB + Blue-Green)
 scripts/
   proxy-green.sh → Green環境へのローカルプロキシ
@@ -61,7 +59,7 @@ GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検
 uv sync --no-dev
 
 # ローカル実行
-uv run streamlit run router.py
+uv run streamlit run app/main.py
 
 # テスト・Lint
 uv run pytest

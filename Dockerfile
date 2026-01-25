@@ -16,4 +16,4 @@ COPY . .
 
 EXPOSE 8501
 
-CMD ["uv", "run", "streamlit", "run", "router.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.baseUrlPath=/app"]
+CMD ["uv", "run", "streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.baseUrlPath=/app"]
