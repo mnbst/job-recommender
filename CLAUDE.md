@@ -12,7 +12,8 @@ Python 3.11+ | Streamlit | Vertex AI (Gemini) | Perplexity AI (求人検索) | T
 
 ## Structure
 ```
-app.py           → Streamlit UIエントリーポイント
+router.py        → Streamlit UIエントリーポイント
+app.py           → 互換エントリーポイント（router.pyを呼び出し）
 services/
   auth.py        → GitHub OAuth認証
   github.py      → GitHub API (PyGithub) - RepoInfo取得
@@ -59,7 +60,7 @@ GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検
 uv sync --no-dev
 
 # ローカル実行
-uv run streamlit run app.py
+uv run streamlit run router.py
 
 # テスト・Lint
 uv run pytest
@@ -121,4 +122,3 @@ echo -n "GREEN_CLIENT_SECRET" | gcloud secrets create green_github_oauth_client_
 ```hcl
 cloud_run_invoker_members = ["user:your-email@gmail.com"]
 ```
-
