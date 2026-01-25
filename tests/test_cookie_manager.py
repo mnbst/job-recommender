@@ -4,6 +4,15 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
+import streamlit as st
+
+
+@pytest.fixture(autouse=True)
+def clear_cookie_cache():
+    """各テスト前にsession_stateのCookieキャッシュをクリア."""
+    st.session_state.pop("_cookie_manager_cache", None)
+    yield
+    st.session_state.pop("_cookie_manager_cache", None)
 
 
 class TestCookieManager:
@@ -251,12 +260,14 @@ class TestCookieManagerIntegration:
             importlib.reload(session_module)
 
             # Cookieがない状態
+            st.session_state.pop("_cookie_manager_cache", None)
             mock_func.return_value = {"cookies": {}, "result": None}
             manager = cm_module.CookieManager(key="test")
             result = session_module.get_session_cookie(manager)
             assert result is None
 
-            # Cookieがある状態
+            # Cookieがある状態（キャッシュをクリアして新しい状態をテスト）
+            st.session_state.pop("_cookie_manager_cache", None)
             mock_func.return_value = {
                 "cookies": {"job_recommender_session": "test-session-id"},
                 "result": None,

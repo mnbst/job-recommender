@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import streamlit as st
 import streamlit.components.v2 as components
 
 # JavaScriptファイルを読み込み
@@ -16,6 +17,9 @@ _cookie_component = components.component(
     js=_JS_CODE,
 )
 
+# session_stateキャッシュ用キー
+_COOKIES_CACHE_KEY = "_cookie_manager_cache"
+
 
 class CookieManager:
     """Streamlit components.v2を使用したCookie Manager.
@@ -27,6 +31,7 @@ class CookieManager:
         - iframe不要（v2 API）でパフォーマンス向上
         - 既存APIとの互換性を維持
         - 依存パッケージ削減
+        - session_stateキャッシュによるコールドスタート対策
     """
 
     def __init__(self, key: str = "cookie_manager") -> None:
@@ -36,9 +41,11 @@ class CookieManager:
             key: コンポーネントインスタンスの一意キー
         """
         self._key = key
-        self._cookies: dict[str, str] = {}
+        # session_stateからキャッシュ復元（コールドスタート対策）
+        cached = st.session_state.get(_COOKIES_CACHE_KEY)
+        self._cookies: dict[str, str] = cached if isinstance(cached, dict) else {}
         self._result: Any = None
-        self._initialized = False
+        self._initialized = bool(self._cookies)
 
     def _on_cookies_change(self, cookies: dict[str, str] | None = None) -> None:
         """cookies状態変更時のコールバック."""
@@ -46,6 +53,8 @@ class CookieManager:
             # 空dictでも初期化済みとみなす（同一keyの重複生成を防ぐ）
             self._cookies = cookies
             self._initialized = True
+            # session_stateにキャッシュ（rerun後も利用可能に）
+            st.session_state[_COOKIES_CACHE_KEY] = cookies
 
     def _on_result_change(self, result: Any = None) -> None:
         """result状態変更時のコールバック."""
@@ -83,6 +92,8 @@ class CookieManager:
                 # 空dictでも初期化済みとみなす（同一keyの重複生成を防ぐ）
                 self._cookies = cookies
                 self._initialized = True
+                # session_stateにキャッシュ
+                st.session_state[_COOKIES_CACHE_KEY] = cookies
 
         return result
 
