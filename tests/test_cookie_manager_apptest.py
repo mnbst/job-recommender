@@ -16,7 +16,7 @@ def app_get_cookie():
     """Cookieを取得するテスト用アプリ."""
     import streamlit as st
 
-    from services.components.cookie_manager import get_cookie_manager
+    from app.services.streamlit_components.cookie_manager import get_cookie_manager
 
     st.title("Cookie Test")
     manager = get_cookie_manager(key="test")
@@ -28,7 +28,7 @@ def app_set_cookie():
     """Cookieを設定するテスト用アプリ."""
     import streamlit as st
 
-    from services.components.cookie_manager import get_cookie_manager
+    from app.services.streamlit_components.cookie_manager import get_cookie_manager
 
     st.title("Cookie Set Test")
     manager = get_cookie_manager(key="set_test")
@@ -42,7 +42,7 @@ def app_delete_cookie():
     """Cookieを削除するテスト用アプリ."""
     import streamlit as st
 
-    from services.components.cookie_manager import get_cookie_manager
+    from app.services.streamlit_components.cookie_manager import get_cookie_manager
 
     st.title("Cookie Delete Test")
     manager = get_cookie_manager(key="delete_test")
@@ -56,13 +56,13 @@ def app_session_flow():
     """セッションフローのテスト用アプリ."""
     import streamlit as st
 
-    from services.components.cookie_manager import get_cookie_manager
-    from services.session import get_session_cookie, set_session_cookie
+    from app.services.session import get_session_cookie, set_session_cookie
+    from app.services.streamlit_components.cookie_manager import get_cookie_manager
 
     st.title("Session Flow Test")
     manager = get_cookie_manager(key="session_test")
 
-    session_id = get_session_cookie(manager)
+    session_id = get_session_cookie()
 
     if session_id:
         st.write(f"Logged in: {session_id}")
@@ -79,19 +79,18 @@ class TestCookieManagerWithAppTest:
     @pytest.fixture
     def mock_cookie_component(self):
         """カスタムコンポーネントのモック."""
-        with patch("services.components.cookie_manager._cookie_component") as mock:
+        with patch("app.services.streamlit_components.cookie_manager._cookie_component") as mock:
             mock.return_value = {"cookies": {}, "result": None}
             yield mock
 
     def test_get_cookie_in_app(self, mock_cookie_component):
         """AppTest内でCookieを取得."""
-        mock_cookie_component.return_value = {
-            "cookies": {"session_id": "test-session-123"},
-            "result": None,
-        }
-
-        at = AppTest.from_function(app_get_cookie)
-        at.run(timeout=DEFAULT_TIMEOUT)
+        with patch(
+            "app.services.streamlit_components.cookie_manager.CookieManager.get_from_headers",
+            return_value="test-session-123",
+        ):
+            at = AppTest.from_function(app_get_cookie)
+            at.run(timeout=DEFAULT_TIMEOUT)
 
         assert not at.exception
         output_texts = [m.value for m in at.markdown]
@@ -139,7 +138,7 @@ class TestSessionIntegrationWithAppTest:
     @pytest.fixture
     def mock_cookie_component(self):
         """カスタムコンポーネントのモック."""
-        with patch("services.components.cookie_manager._cookie_component") as mock:
+        with patch("app.services.streamlit_components.cookie_manager._cookie_component") as mock:
             mock.return_value = {"cookies": {}, "result": None}
             yield mock
 

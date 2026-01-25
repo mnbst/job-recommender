@@ -55,7 +55,7 @@ GitHubユーザー名を入力するだけで、リポジトリから技術ス�
 ## セッション復元（Cloud Run）
 
 - Cookie取得はクライアント側で行われるため、コールドスタート直後は未取得になることがあります
-- `router.py` で短時間の待機リトライを行い、Cookie反映後にセッション復元を試みます
+- `app/main.py` で短時間の待機リトライを行い、Cookie反映後にセッション復元を試みます
 
 ## セットアップ
 
@@ -94,7 +94,7 @@ cp .env.local.example .env.local
 # .env.local を編集して各種APIキーを設定
 
 # 起動
-uv run streamlit run router.py
+uv run streamlit run app/main.py
 # http://localhost:8501
 ```
 
@@ -115,12 +115,11 @@ terraform apply
 
 ```
 .
-├── router.py              # Streamlit エントリーポイント
-├── app.py                 # 互換エントリーポイント（router.pyを呼び出し）
-├── services/
-│   ├── github.py          # GitHub API連携
-│   ├── profile.py         # プロファイル生成
-│   └── research.py        # Perplexity AI 求人検索+マッチング
+├── app/
+│   ├── main.py            # Streamlit エントリーポイント
+│   ├── pages/             # Streamlit ページ
+│   ├── ui/                # UIコンポーネント
+│   └── services/          # ドメインロジック
 ├── scripts/
 │   └── load-env.sh        # GCP認証スクリプト
 ├── terraform/             # インフラ定義

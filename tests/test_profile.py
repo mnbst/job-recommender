@@ -1,10 +1,10 @@
-"""Tests for services/profile.py."""
+"""Tests for app/services/profile.py."""
 
 from unittest.mock import MagicMock, patch
 
 from langchain_core.output_parsers import PydanticOutputParser
 
-from services.models import (
+from app.services.models import (
     DeveloperProfile,
     JobFit,
     NotableProject,
@@ -12,7 +12,7 @@ from services.models import (
     SkillAssessment,
     TechStack,
 )
-from services.profile import generate_profile
+from app.services.profile import generate_profile
 
 
 class TestPydanticModels:
@@ -140,8 +140,8 @@ class TestPydanticOutputParser:
 class TestGenerateProfile:
     """Tests for generate_profile function."""
 
-    @patch("services.profile.GenerativeModel")
-    @patch("services.profile.init_vertex_ai")
+    @patch("app.services.profile.GenerativeModel")
+    @patch("app.services.profile.init_vertex_ai")
     def test_generate_profile_success(
         self,
         mock_init: MagicMock,
@@ -185,8 +185,8 @@ class TestGenerateProfile:
         assert "TypeScript" in result["tech_stack"]["languages"]
         mock_init.assert_called_once()
 
-    @patch("services.profile.GenerativeModel")
-    @patch("services.profile.init_vertex_ai")
+    @patch("app.services.profile.GenerativeModel")
+    @patch("app.services.profile.init_vertex_ai")
     def test_generate_profile_with_empty_repos(
         self,
         mock_init: MagicMock,
