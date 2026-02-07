@@ -10,7 +10,6 @@ from app.services.cache import (
     save_repos_cache,
 )
 from app.services.github import analyze_selected_repos, get_repos_metadata
-from app.services.logging_config import get_logger
 from app.services.models import QuotaStatus, RepoMetadata
 from app.services.profile import generate_profile
 from app.services.quota import consume_credit
