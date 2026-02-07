@@ -43,6 +43,30 @@ if st.session_state.get("redirect_to_lp"):
     redirect("https://job-recommender.com/")
 ```
 
+## リダイレクト時のCookie削除
+
+`redirect()`には`delete_cookie`オプションがある：
+
+```python
+redirect("https://example.com/", delete_cookie=True)
+```
+
+### なぜCookieManagerではなくredirect内で削除するか
+
+| 方法 | 動作 |
+|------|------|
+| `CookieManager.delete()` | コンポーネントレンダリング → 削除 → 次rerunで反映 |
+| `redirect(..., delete_cookie=True)` | 削除 → 即リダイレクト（同期的） |
+
+`CookieManager.delete()` → `redirect()` の順だと、Cookie削除完了前にリダイレクトが実行される可能性がある。`redirect.js`内で同期的に削除することで確実性を担保。
+
+CookieManagerに統一する場合は2段階処理が必要（UX的にちらつく可能性あり）：
+```python
+cookie_manager.delete("job_recommender_session")
+st.rerun()  # 削除を反映
+# 次のrerunでリダイレクト
+```
+
 ## 追加調査チェックリスト
 - DevToolsで`<meta>`がDOMに残っているか確認
 - Response headerの`Content-Security-Policy`で`script-src`/`frame-ancestors`を確認

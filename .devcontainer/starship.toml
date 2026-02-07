@@ -1,0 +1,63 @@
+# Starship Config - Sleek Terminal
+
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$python\
+$terraform\
+$docker_context\
+$cmd_duration\
+$line_break\
+$character"""
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[directory]
+style = "bold cyan"
+truncation_length = 3
+truncation_symbol = ".../"
+read_only = " "
+
+[git_branch]
+symbol = " "
+style = "bold purple"
+
+[git_status]
+style = "bold yellow"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+modified = "!${count}"
+staged = "+${count}"
+untracked = "?${count}"
+
+[python]
+symbol = " "
+style = "bold yellow"
+pyenv_version_name = true
+
+[terraform]
+symbol = "💠 "
+style = "bold 105"
+
+[docker_context]
+symbol = " "
+style = "bold blue"
+
+[cmd_duration]
+min_time = 2_000
+style = "bold yellow"
+format = "took [$duration]($style) "
+
+[username]
+style_user = "bold green"
+show_always = false
+
+[hostname]
+ssh_only = true
+style = "bold dimmed green"

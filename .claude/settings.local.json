@@ -26,7 +26,12 @@
       "WebFetch(domain:github.com)",
       "Bash(uv run pytest:*)",
       "Bash(python:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(gcloud billing accounts list:*)",
+      "Bash(apt-get update:*)",
+      "Bash(apt-get install:*)",
+      "Bash(sudo apt-get:*)",
+      "Bash(sudo apt-get install:*)"
     ]
   },
   "hooks": {
