@@ -57,10 +57,10 @@ def _init_credits(user_id: int) -> dict:
         doc_ref.create(data)
         return data
     except AlreadyExists:
-        # 既に存在する場合は現在の値を返す
+        # 競合で既に作成済み → 初回ユーザーの並行リクエスト
         log_structured(
             logger,
-            "Credits already initialized",
+            "Credits already initialized (concurrent request)",
             level=logging.INFO,
             user_id=user_id,
         )

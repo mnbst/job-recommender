@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "load-env",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/load-env.sh",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "close": true
+            }
+        }
+    ]
+}

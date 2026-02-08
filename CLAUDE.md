@@ -8,20 +8,30 @@ CLAUDE.md・skills/*.md・agents/*.mdを更新する際は以下を守る：
 - **構造化**: 見出し・表で情報を整理。長文段落は分割
 
 ## Stack
-Python 3.11+ | Streamlit | Vertex AI (Gemini) | Perplexity AI (求人検索) | Terraform 1.6+ | GCP (Cloud Run + LB)
+Python 3.11+ | Streamlit | Vertex AI (Gemini) | Perplexity AI (求人検索) | Terraform 1.6+ | GCP (Cloud Run + LB + Cloud Build) | GitHub OAuth + Firestore
 
 ## Structure
 ```
 app/
-  main.py        → Streamlit UIエントリーポイント
-  pages/         → Streamlitページ
-  ui/            → UIコンポーネント
-  services/      → ドメインロジック
-terraform/       → インフラ定義 (Cloud Run + LB + Blue-Green)
+  main.py              → Streamlit UIエントリーポイント
+  pages/               → Streamlitページ (home, logout, plans, privacy, terms)
+  ui/                  → UIコンポーネント (job_search, profile, sidebar, welcome, etc)
+  services/            → ドメインロジック (auth, github, profile, research, session, quota, etc)
+terraform/
+  main.tf              → Cloud Run, Secret Manager, IAM
+  load_balancer.tf     → LB, SSL証明書
+  cloudbuild.tf        → Cloud Build Trigger (CI/CD)
+  firestore.tf         → Firestore Database
+  monitoring.tf        → アラート設定
+  providers.tf         → Terraformプロバイダー
+  variables.tf         → 変数定義
 scripts/
-  proxy-green.sh → Green環境へのローカルプロキシ
-  rollback.sh    → 前リビジョンへのロールバック
-Dockerfile       → Python 3.11-slim + uv
+  load-env.sh          → GCP認証スクリプト
+  pre-terraform-apply.sh → terraform apply前のDockerビルドフック
+  proxy-green.sh       → Green環境へのローカルプロキシ
+  rollback.sh          → 前リビジョンへのロールバック
+Dockerfile             → マルチステージビルド (Python 3.11-slim + uv)
+pyproject.toml         → 依存関係管理 (uv)
 ```
 
 ## Flow
@@ -55,27 +65,32 @@ GitHub API → Vertex AI (プロファイル生成) → Perplexity AI (求人検
 
 ## Quick Commands
 ```bash
-# 依存関係インストール（本番用）
-uv sync --no-dev
+# 依存関係インストール
+uv sync              # 開発用（テスト含む）
+uv sync --no-dev     # 本番用
 
 # ローカル実行
-uv run streamlit run app/main.py
+./scripts/load-env.sh                      # GCP認証（初回のみ）
+uv run streamlit run app/main.py           # http://localhost:8501
 
 # テスト・Lint
 uv run pytest
 uv run ruff check . && uv run ruff format .
 
-# デプロイ (Blue本番)
+# Dockerイメージビルド＆プッシュ (Blue本番)
 gcloud builds submit --tag asia-northeast1-docker.pkg.dev/${PROJECT_ID}/job-recommender/app:latest
 
-# Terraform
+# Terraform（初回）
 cd terraform
 terraform init -backend-config="bucket=${PROJECT_ID}-tfstate"
-terraform plan && terraform apply
+
+# Terraform適用（自動的にDockerビルド→terraform apply実行）
+terraform plan
+terraform apply    # pre-terraform-apply.shフックで自動ビルド
 
 # Blue-Green デプロイ
-./scripts/proxy-green.sh              # Green環境をローカルで検証
-./scripts/rollback.sh                 # 前リビジョンにロールバック
+./scripts/proxy-green.sh    # Green環境をローカルで検証（http://localhost:8080）
+./scripts/rollback.sh       # Blue環境を前リビジョンにロールバック
 ```
 
 ## Environment Variables
@@ -100,8 +115,10 @@ Blue/Green環境それぞれに別のOAuth Appが必要（callback URLが異な�
 
 | 環境 | Application name | Callback URL |
 |------|------------------|--------------|
-| Blue | `Job Recommender` | `https://<LB_IP>.nip.io` |
-| Green | `Job Recommender Green` | `http://localhost:8080`（ローカルプロキシ用） |
+| Blue | `Job Recommender` | `https://<LB_IP>.nip.io/app` または `https://<CUSTOM_DOMAIN>/app` |
+| Green | `Job Recommender Green` | `http://localhost:8080/app`（ローカルプロキシ用） |
+
+**注**: Callback URLのパス `/app` はCloud RunのbaseUrlPathと一致させる必要があります。
 
 Secret Manager登録:
 ```bash
@@ -117,7 +134,20 @@ echo -n "GREEN_CLIENT_SECRET" | gcloud secrets create green_github_oauth_client_
 ## Blue-Green Deployment
 詳細は [project-architecture](./.claude/skills/project-architecture/SKILL.md) を参照。
 
-**Green環境IAM設定** (`terraform.tfvars`):
+### CI/CD自動デプロイ
+Cloud Build Triggerで `main` ブランチへのpushを検知して自動デプロイ（Blue環境）:
+- `terraform/cloudbuild.tf` で定義
+- GitHub接続は事前にGCP Consoleで手動設定が必要
+- ビルド成功/失敗のアラートはメール通知（`monitoring.tf`）
+
+### Green環境IAM設定
+`terraform/terraform.tfvars`:
 ```hcl
 cloud_run_invoker_members = ["user:your-email@gmail.com"]
 ```
+
+### 手動デプロイフロー
+1. Dockerビルド＆プッシュ（Blue環境）
+2. `terraform apply` で反映（`pre-terraform-apply.sh` フックで自動ビルド）
+3. Green環境のローカル検証: `./scripts/proxy-green.sh`
+4. 問題発生時のロールバック: `./scripts/rollback.sh`

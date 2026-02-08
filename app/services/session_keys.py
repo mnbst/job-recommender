@@ -30,5 +30,8 @@ USER_SETTINGS = "_cache_user_settings"
 JOB_RESULTS = "_cache_job_results"
 JOB_PREFERENCES = "_cache_job_preferences"  # 検索条件（追加検索用）
 
+# Onboarding
+SHOW_PROFILE_SUCCESS = "_show_profile_success"
+
 # Logout flow
 LOGOUT_REQUESTED = "_logout_requested"

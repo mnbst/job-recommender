@@ -5,7 +5,6 @@ import streamlit as st
 from app.services.auth import get_current_user, is_authenticated
 from app.services.logout import logout
 from app.services.quota import get_quota_status
-from app.ui.credits import render_remaining_credits_caption
 
 
 def render_sidebar(cookie_manager) -> None:
@@ -28,7 +27,7 @@ def render_sidebar(cookie_manager) -> None:
                 st.write(f"**{user.login}**")
                 st.divider()
 
-                render_remaining_credits_caption(quota.credits)
+                st.metric("残クレジット", quota.credits)
                 st.divider()
 
                 st.button(

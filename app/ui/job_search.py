@@ -108,11 +108,18 @@ def job_search(
                         "フルスタック",
                         "インフラ/SRE",
                         "データエンジニア",
-                        "機械学習",
+                        "機械学習/AI",
                         "テックリード",
-                        "EM",
+                        "EM/VPoE",
+                        "プロダクトマネージャー",
+                        "デザイナー（UI/UX）",
+                        "データアナリスト",
+                        "QA/テスト",
+                        "マーケター",
+                        "セールス/BizDev",
                     ],
                     key=JOB_TYPE,
+                    help="複数選択可。GitHubの内容に関わらず希望職種を選べます",
                 )
                 st.multiselect(
                     "雇用形態",
@@ -128,7 +135,7 @@ def job_search(
 
     search_conditions()
     search_button = render_credit_button(
-        "求人を検索",
+        "求人を検索 (1クレジット → 3件表示)",
         credits=quota.credits,
         can_use=quota.can_use,
         type="primary",

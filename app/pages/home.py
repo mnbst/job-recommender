@@ -4,6 +4,7 @@ import streamlit as st
 
 from app.services.auth import get_current_user, is_authenticated
 from app.services.quota import get_quota_status
+from app.services.session_keys import SHOW_PROFILE_SUCCESS
 from app.ui import job_search, profile_section, render_welcome
 from app.ui.job_search import load_settings
 
@@ -25,6 +26,17 @@ def render_home() -> None:
         user_id = user.id
         quota = get_quota_status(user_id)
 
+        with st.expander("クレジットの使い方"):
+            st.markdown(
+                """
+| 機能 | 消費 | 内容 |
+|------|------|------|
+| プロファイル生成 | 1 | GitHubリポジトリを分析 |
+| 求人検索 | 1 | 3件の求人を表示 |
+| もっと見る | 1 | 最大3件を追加表示 |
+"""
+            )
+
         # 設定を読み込み
         load_settings(user_id)
 
@@ -35,6 +47,13 @@ def render_home() -> None:
             quota=quota,
             repo_limit=DEFAULT_REPO_LIMIT,
         )
+
+        # プロファイル生成成功後のガイダンス
+        if st.session_state.pop(SHOW_PROFILE_SUCCESS, False):
+            st.success(
+                "プロファイルを生成しました！"
+                "下の「求人検索」で希望条件を設定して求人を探しましょう。"
+            )
 
         if profile:
             st.divider()

@@ -20,6 +20,7 @@ from app.services.session_keys import (
     REGEN_SELECTED_REPOS,
     REPO_METADATA_LIST,
     SELECTED_REPOS,
+    SHOW_PROFILE_SUCCESS,
 )
 from app.ui.credits import render_remaining_credits_caption
 
@@ -150,7 +151,7 @@ def profile_section(
 
             if selected_repos:
                 if st.button(
-                    f"{len(selected_repos)} 件のリポジトリでプロファイル再生成",
+                    f"{len(selected_repos)} 件のリポジトリでプロファイル再生成 (1クレジット)",
                     type="primary",
                     key="regen_profile_btn",
                 ):
@@ -171,7 +172,7 @@ def profile_section(
 
     if selected_repos:
         if st.button(
-            f"{len(selected_repos)} 件のリポジトリでプロファイル生成",
+            f"{len(selected_repos)} 件のリポジトリでプロファイル生成 (1クレジット)",
             type="primary",
         ):
             _generate_profile(user_id, user_login, selected_repos)
@@ -212,6 +213,8 @@ def _run_profile_generation(
                 repo_count=len(repos),
             )
             st.session_state[PROFILE_STATE] = profile
+            if not invalidate_cache:
+                st.session_state[SHOW_PROFILE_SUCCESS] = True
         else:
             st.error("リポジトリの分析に失敗しました")
         st.rerun()

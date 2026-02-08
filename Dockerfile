@@ -1,4 +1,5 @@
-FROM python:3.11-slim
+# マルチステージビルドでuvを最終イメージから除外
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
@@ -8,15 +9,29 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies only (not the project itself)
+# Install dependencies
 RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application code
-COPY . .
+COPY app/ ./app/
+COPY .streamlit/ ./.streamlit/
 
-# Install the project in the virtual environment
+# Install the project
 RUN uv pip install --no-deps -e .
+
+# Final stage - runtime only
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy only the virtual environment and app
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/app /app/app
+COPY --from=builder /app/.streamlit /app/.streamlit
+
+# Use the virtual environment directly
+ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 8501
 
-CMD ["uv", "run", "streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.baseUrlPath=/app"]
+CMD ["streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.baseUrlPath=/app"]

@@ -8,11 +8,15 @@ __pycache__/
 venv/
 ENV/
 env/
+.ruff_cache/
+.uv-cache/
+*.egg-info/
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+tests/
 
 # IDE
 .vscode/
@@ -30,12 +34,23 @@ htmlcov/
 
 # Documentation
 *.md
+README.md
+CLAUDE.md
+TODO.md
+LICENSE
 
-# Terraform
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.*
-terraform/.terraform.lock.hcl
+# Infrastructure & Deployment (not needed at runtime)
+terraform/
+scripts/
+cloudbuild.yaml
+ruff.toml
+
+# Claude Code settings
+.claude/
+
+# Unused static files
+static/
+updates/
 
 # Misc
 .DS_Store

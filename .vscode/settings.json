@@ -1,0 +1,14 @@
+{
+    "python.defaultInterpreterPath": "/Users/gaku/project/job-recommender/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.languageServer": "Pylance",
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "always",
+            "source.organizeImports.ruff": "always"
+        },
+    },
+    "claudeCode.useTerminal": false
+}
