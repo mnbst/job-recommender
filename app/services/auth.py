@@ -46,7 +46,7 @@ def get_authorization_url(redirect_uri: str) -> str:
     params = {
         "client_id": client_id,
         "redirect_uri": redirect_uri,
-        "scope": "read:user user:email",
+        "scope": "read:user",
     }
     return f"{GITHUB_AUTHORIZE_URL}?{urlencode(params)}"
 

@@ -54,27 +54,29 @@ def setup_logging() -> None:
     _logging_initialized = True
 
 
-def _get_user_id() -> str | None:
-    """session_stateからuser_idを取得（循環importを避けるため遅延import）."""
+def _get_user_context() -> tuple[str | None, str | None]:
+    """session_stateからuser_id, loginを取得（循環importを避けるため遅延import）."""
     try:
         import streamlit as st
 
         from app.services.session_keys import USER
 
         user = st.session_state.get(USER)
-        return str(user.id) if user else None
+        if user:
+            return str(user.id), user.login
+        return None, None
     except (ImportError, AttributeError, RuntimeError):
-        return None
+        return None, None
 
 
 class UserContextAdapter(logging.LoggerAdapter):
-    """user_idを自動的に含めるLoggerAdapter."""
+    """user_id, loginを自動的に含めるLoggerAdapter."""
 
     def process(
         self, msg: str, kwargs: MutableMapping[str, Any]
     ) -> tuple[str, dict[str, Any]]:
-        """ログメッセージにuser_idを追加."""
-        user_id = _get_user_id()
+        """ログメッセージにuser_id, loginを追加."""
+        user_id, login = _get_user_context()
         extra = kwargs.get("extra", {})
 
         if is_cloud_run():
@@ -82,10 +84,14 @@ class UserContextAdapter(logging.LoggerAdapter):
             json_fields = extra.get("json_fields", {})
             if user_id:
                 json_fields["user_id"] = user_id
+            if login:
+                json_fields["login"] = login
             extra["json_fields"] = json_fields
         else:
             # ローカル環境用
-            if user_id:
+            if login:
+                msg = f"[{login}] {msg}"
+            elif user_id:
                 msg = f"[user_id={user_id}] {msg}"
 
         kwargs["extra"] = extra
