@@ -222,3 +222,4 @@ __marimo__/
 job_recommender.db
 
 .claude/plans/
+.claude/settings.local.json
